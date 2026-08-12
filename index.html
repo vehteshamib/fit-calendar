@@ -210,6 +210,9 @@
     .tabs { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
     .tabs button { background: #edf3ec; color: var(--ink); }
     .tabs button.active { background: var(--green); color: white; }
+    .food-tabs { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
+    .food-tabs button { padding: 8px 10px; font-size: 12px; background: #edf3ec; color: var(--ink); box-shadow: none; }
+    .food-tabs button.active { background: var(--green); color: white; }
     .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
     svg { width: 100%; height: 240px; background: linear-gradient(180deg, #ffffff, #fbfcf8); border: 1px solid var(--line); border-radius: 8px; }
     .axis { stroke: #d6ddd2; stroke-dasharray: 3 3; }
@@ -359,14 +362,88 @@
       [57,"همبرگر گوشت",295,17,14,24,1.3,43],
       [58,"سالاد شیرازی",25,0.9,0.2,5,1.2,93],
       [59,"خوراک لوبیا",110,6,3,16,5,72],
-      [60,"قورمه سبزی",151,8,10,7,2.5,72]
-    ].map(([id,name,cal,protein,fat,carbs,fiber,water]) => ({ id, name, cal, protein, fat, carbs, fiber, water }));
+      [60,"قورمه سبزی",151,8,10,7,2.5,72],
+      [61,"انگور",69,0.7,0.2,18.1,0.9,81,"fruit"],
+      [62,"کیوی",61,1.1,0.5,14.7,3,83,"fruit"],
+      [63,"گلابی",57,0.4,0.1,15.2,3.1,84,"fruit"],
+      [64,"هلو",39,0.9,0.3,9.5,1.5,89,"fruit"],
+      [65,"زردآلو",48,1.4,0.4,11.1,2,86,"fruit"],
+      [66,"انار",83,1.7,1.2,18.7,4,78,"fruit"],
+      [67,"طالبی",34,0.8,0.2,8.2,0.9,90,"fruit"],
+      [68,"آناناس",50,0.5,0.1,13.1,1.4,86,"fruit"],
+      [69,"بلوبری",57,0.7,0.3,14.5,2.4,84,"fruit"],
+      [70,"پیاز",40,1.1,0.1,9.3,1.7,89,"vegetable"],
+      [71,"فلفل دلمه‌ای",31,1,0.3,6,2.1,92,"vegetable"],
+      [72,"گل کلم پخته",23,1.8,0.5,4.1,2.3,93,"vegetable"],
+      [73,"کلم پخته",23,1.3,0.1,5.5,1.9,92,"vegetable"],
+      [74,"کرفس",16,0.7,0.2,3,1.6,95,"vegetable"],
+      [75,"نخود فرنگی پخته",84,5.4,0.4,15.6,5.5,78,"vegetable"],
+      [76,"چغندر پخته",44,1.7,0.2,10,2,88,"vegetable"],
+      [77,"ماهی قزل‌آلا",190,20,11,0,0,66,"protein"],
+      [78,"ساردین",208,25,11,0,0,60,"protein"],
+      [79,"گوشت چرخ‌کرده کم‌چرب",250,26,15,0,0,58,"protein"],
+      [80,"فیله بوقلمون",135,30,1.5,0,0,69,"protein"],
+      [81,"جگر گوساله",135,20,3.6,3.9,0,72,"protein"],
+      [82,"توفو سفت",144,15.7,8.7,3.9,2.3,70,"protein"],
+      [83,"شیر پرچرب",61,3.2,3.3,4.8,0,88,"dairy"],
+      [84,"پنیر چدار",403,25,33,1.3,0,37,"dairy"],
+      [85,"پنیر کاتیج",98,11,4.3,3.4,0,79,"dairy"],
+      [86,"کفیر کم‌چرب",41,3.8,1,4.5,0,90,"dairy"],
+      [87,"برنج باسماتی پخته",121,3.5,0.4,25.2,0.4,70,"grain"],
+      [88,"نان تست سبوس‌دار",247,13,4.2,41,7,38,"grain"],
+      [89,"نان بربری",265,8.5,1.3,56,3.7,35,"grain"],
+      [90,"کوسکوس پخته",112,3.8,0.2,23.2,1.4,72,"grain"],
+      [91,"گندم پخته",111,3.6,0.8,23,4.3,70,"grain"],
+      [92,"لوبیا سفید پخته",139,9.7,0.4,25,6.3,63,"legume"],
+      [93,"لوبیا قرمز پخته",127,8.7,0.5,22.8,6.4,67,"legume"],
+      [94,"ماش پخته",105,7,0.4,19,7.6,72,"legume"],
+      [95,"باقلا پخته",110,7.6,0.4,19.7,5.4,72,"legume"],
+      [96,"پسته",562,20,45,28,10,4,"fat"],
+      [97,"فندق",628,15,61,17,9.7,5,"fat"],
+      [98,"بادام هندی",553,18,44,30,3.3,5,"fat"],
+      [99,"تخم کتان",534,18,42,29,27,7,"fat"],
+      [100,"دانه چیا",486,16.5,31,42,34,6,"fat"],
+      [101,"کنجد",573,17,50,23,12,5,"fat"],
+      [102,"کره",717,0.9,81,0.1,0,16,"fat"],
+      [103,"املت ساده",154,11,12,1.5,0,75,"meal"],
+      [104,"عدسی",100,6.5,2,15,5,76,"meal"],
+      [105,"میرزاقاسمی",120,4,8,9,2.5,78,"meal"],
+      [106,"کشک بادمجان",185,6,13,12,3,70,"meal"],
+      [107,"زرشک پلو با مرغ",210,12,6,27,1,57,"meal"],
+      [108,"چلوکباب کوبیده",290,15,17,20,1,48,"meal"],
+      [109,"آبگوشت",160,12,8,10,2,70,"meal"],
+      [110,"سوپ جو",75,3,2,11,2,83,"meal"],
+      [111,"سالاد الویه",230,7,16,15,2,61,"meal"],
+      [112,"ساندویچ مرغ",220,14,8,24,2,55,"meal"],
+      [113,"پاستا با سس گوجه",140,5,3,24,2.5,68,"meal"],
+      [114,"لازانیا گوشت",165,10,8,14,1.5,66,"meal"],
+      [115,"خرمای خشک",277,1.8,0.2,75,6.7,20,"sweet"],
+      [116,"بستنی وانیلی",207,3.5,11,24,0.7,61,"sweet"],
+      [117,"کیک ساده",370,5,15,55,1,20,"sweet"],
+      [118,"بیسکویت ساده",480,7,20,65,2,3,"sweet"],
+      [119,"نوشابه",42,0,0,10.6,0,89,"drink"],
+      [120,"آب پرتقال",45,0.7,0.2,10.4,0.2,88,"drink"]
+    ].map(([id,name,cal,protein,fat,carbs,fiber,water,category]) => ({ id, name, cal, protein, fat, carbs, fiber, water, category: category || inferFoodCategory(id, name) }));
 
     const root = document.getElementById("root");
     const $ = (selector) => document.querySelector(selector);
     const f = (n, d = 0) => Number(n || 0).toLocaleString("fa-IR", { maximumFractionDigits: d, minimumFractionDigits: d });
     const isoToday = () => new Date().toISOString().slice(0, 10);
     const defaultFoods = foods.map(food => ({ ...food }));
+    const foodCategories = [
+      ["all", "همه"],
+      ["fruit", "میوه"],
+      ["vegetable", "سبزیجات"],
+      ["protein", "گوشت و پروتئین"],
+      ["dairy", "لبنیات"],
+      ["grain", "غلات و کربوهیدرات"],
+      ["legume", "حبوبات"],
+      ["fat", "مغزها و چربی‌ها"],
+      ["meal", "غذاهای کامل"],
+      ["sweet", "شیرینی و تنقلات"],
+      ["drink", "نوشیدنی"],
+      ["custom", "غذاهای من"]
+    ];
     const storeKey = "fitCalendarLocalV3";
     const SUPABASE_URL = "https://sdofiorarcavuhrrfcei.supabase.co";
     const SUPABASE_KEY = "sb_publishable_XkbTLJ4f657yVcpUzWc_0w_052_OPbm";
@@ -384,6 +461,7 @@
         plans: [],
         customFoods: [],
         foodOverrides: {},
+        foodTab: "all",
         logs: {},
         currentDate,
         chartRange: { from: addDays(currentDate, -30), to: currentDate }
@@ -398,6 +476,7 @@
       if (next.plan && !next.plans.length) next.plans.push(next.plan);
       next.customFoods ||= [];
       next.foodOverrides ||= {};
+      next.foodTab ||= "all";
       next.logs ||= {};
       next.currentDate ||= isoToday();
       next.chartRange ||= { from: addDays(next.currentDate, -30), to: next.currentDate };
@@ -424,6 +503,7 @@
         analysis: state.analysis || null,
         customFoods: state.customFoods || [],
         foodOverrides: state.foodOverrides || {},
+        foodTab: state.foodTab || "all",
         logs: state.logs || {},
         currentDate: state.currentDate || isoToday(),
         chartRange: state.chartRange || { from: addDays(state.currentDate || isoToday(), -30), to: state.currentDate || isoToday() }
@@ -804,22 +884,14 @@
       const t = totals(log);
       const plan = currentPlanFor(state.currentDate);
       page(`${topbar(`<button class="ghost" onclick="showProfile()">اصلاح پروفایل</button>`)}${steps(5)}
-        <div class="metrics-board">
-          ${metric("کالری", t.cal, plan.calories, "kcal")}
-          ${metric("پروتئین", t.protein, plan.protein, "g")}
-          ${metric("چربی", t.fat, plan.fat, "g")}
-          ${metric("کربوهیدرات", t.carbs, plan.carbs, "g")}
-          ${metric("فیبر", t.fiber, plan.fiber, "g")}
-          ${metric("آب", log.water, plan.waterGlasses, "لیوان")}
-          ${metric("قدم", log.steps, plan.steps, "")}
-          ${metric("ورزش", log.exercise, plan.exercise, "دقیقه")}
-        </div>
+        <div id="dailyMetrics" class="metrics-board">${dailyMetrics()}</div>
         <div class="workspace" style="margin-top:16px">
           <aside class="card">
             <h2>دیتابیس غذا</h2>
             <p class="muted">روی غذا کلیک کن یا کارت را بکش داخل لاگ. غذای جدید هم می‌توانی به دیتابیس اضافه کنی.</p>
             <label>جستجو</label><input id="foodSearch" oninput="renderFoods()" placeholder="مثلاً مرغ، برنج، سیب">
             <button class="secondary" style="margin-top:10px" onclick="openFoodModal()">افزودن غذای جدید</button>
+            <div id="foodTabs" class="food-tabs">${foodTabs()}</div>
             <div id="foodList" class="food-list" style="margin-top:12px"></div>
           </aside>
           <section>
@@ -861,6 +933,27 @@
       renderEntries();
       renderCharts();
       setupDropzone();
+    }
+
+    function dailyMetrics() {
+      const log = currentLog();
+      const t = totals(log);
+      const plan = currentPlanFor(state.currentDate);
+      return [
+        metric("کالری", t.cal, plan.calories, "kcal"),
+        metric("پروتئین", t.protein, plan.protein, "g"),
+        metric("چربی", t.fat, plan.fat, "g"),
+        metric("کربوهیدرات", t.carbs, plan.carbs, "g"),
+        metric("فیبر", t.fiber, plan.fiber, "g"),
+        metric("آب", log.water, plan.waterGlasses, "لیوان"),
+        metric("قدم", log.steps, plan.steps, ""),
+        metric("ورزش", log.exercise, plan.exercise, "دقیقه")
+      ].join("");
+    }
+
+    function renderDailyMetrics() {
+      const board = $("#dailyMetrics");
+      if (board) board.innerHTML = dailyMetrics();
     }
 
     function metric(label, actual, target, unit) {
@@ -929,17 +1022,61 @@
       return state.customFoods.some(food => food.id === id);
     }
 
+    function inferFoodCategory(id, name) {
+      if (id <= 6 || [61,62,63,64,65,66,67,68,69].includes(id)) return "fruit";
+      if ([34,35,36,37,38,39,40,46,49,50,58,70,71,72,73,74,75,76].includes(id)) return "vegetable";
+      if ([14,15,16,17,18,19,20,47,48,51,77,78,79,80,81,82].includes(id)) return "protein";
+      if ([21,22,23,24,41,42,83,84,85,86].includes(id)) return "dairy";
+      if ([7,8,9,10,11,12,13,52,53,55,87,88,89,90,91].includes(id)) return "grain";
+      if ([25,26,27,28,59,92,93,94,95].includes(id)) return "legume";
+      if ([29,30,31,32,33,96,97,98,99,100,101,102].includes(id)) return "fat";
+      if ([56,57,60,103,104,105,106,107,108,109,110,111,112,113,114].includes(id)) return "meal";
+      if ([43,44,45,54,115,116,117,118].includes(id)) return "sweet";
+      if ([119,120].includes(id)) return "drink";
+      return "meal";
+    }
+
+    function getFoodCategory(food) {
+      return food.category || inferFoodCategory(food.id, food.name);
+    }
+
+    function foodTabs() {
+      const active = state.foodTab || "all";
+      return foodCategories.map(([key, label]) => `<button class="${active === key ? "active" : ""}" onclick="setFoodTab('${key}')">${label}</button>`).join("");
+    }
+
+    function setFoodTab(key) {
+      state.foodTab = key;
+      save();
+      const tabs = $("#foodTabs");
+      if (tabs) tabs.innerHTML = foodTabs();
+      renderFoods();
+    }
+
     function renderFoods() {
       const q = ($("#foodSearch")?.value || "").trim();
-      const list = foods.filter(food => !q || food.name.includes(q) || String(food.id) === q).slice(0, 80);
+      const active = state.foodTab || "all";
+      const list = foods.filter(food => {
+        const matchesSearch = !q || food.name.includes(q) || String(food.id) === q;
+        const matchesTab = active === "all" || (active === "custom" ? isCustomFood(food.id) : getFoodCategory(food) === active);
+        return matchesSearch && matchesTab;
+      }).slice(0, 120);
+      if (!list.length) {
+        $("#foodList").innerHTML = `<div class="notice">در این دسته هنوز غذایی پیدا نشد.</div>`;
+        return;
+      }
       $("#foodList").innerHTML = list.map(food => `<div class="food-card" draggable="true" ondragstart="dragFood(event, ${food.id})" onclick="addFood(${food.id})">
         <b>${food.id}. ${esc(food.name)}</b>
-        <small>${food.cal} kcal | پروتئین ${food.protein}g | فیبر ${food.fiber}g در ۱۰۰ گرم</small>
+        <small>${categoryLabel(getFoodCategory(food))} | ${food.cal} kcal | پروتئین ${food.protein}g | فیبر ${food.fiber}g در ۱۰۰ گرم</small>
         <div class="food-actions">
           <button class="ghost" onclick="event.stopPropagation(); openFoodModal(${food.id})">ویرایش</button>
           ${isCustomFood(food.id) ? `<button class="danger" onclick="event.stopPropagation(); deleteFood(${food.id})">حذف</button>` : ""}
         </div>
       </div>`).join("");
+    }
+
+    function categoryLabel(key) {
+      return foodCategories.find(([id]) => id === key)?.[1] || "غذا";
     }
 
     function dragFood(event, id) {
@@ -1028,6 +1165,7 @@
       const box = $(`#${key}Tracker`);
       if (box) box.className = `tracker ${cls}`;
       save();
+      renderDailyMetrics();
       renderCharts();
     }
 
@@ -1183,6 +1321,9 @@
           <input id="editingFoodId" type="hidden" value="${food?.id || ""}">
           <div class="grid-3">
             <div><label>نام غذا</label><input id="newFoodName" value="${esc(food?.name || "")}"></div>
+            <div><label>دسته</label><select id="newFoodCategory">
+              ${foodCategories.filter(([key]) => key !== "all" && key !== "custom").map(([key, label]) => `<option value="${key}" ${getFoodCategory(food || { id: 0, name: "" }) === key ? "selected" : ""}>${label}</option>`).join("")}
+            </select></div>
             <div><label>کالری (kcal/100g)</label><input id="newFoodCal" type="number" value="${food?.cal || ""}"></div>
             <div><label>پروتئین (g/100g)</label><input id="newFoodProtein" type="number" step="0.1" value="${food?.protein || ""}"></div>
             <div><label>چربی (g/100g)</label><input id="newFoodFat" type="number" step="0.1" value="${food?.fat || ""}"></div>
@@ -1216,7 +1357,8 @@
         fat: Number($("#newFoodFat").value || 0),
         carbs: Number($("#newFoodCarbs").value || 0),
         fiber: Number($("#newFoodFiber").value || 0),
-        water: Number($("#newFoodWater").value || 0)
+        water: Number($("#newFoodWater").value || 0),
+        category: $("#newFoodCategory").value || "meal"
       };
       const existingIndex = foods.findIndex(item => item.id === id);
       if (existingIndex >= 0) foods[existingIndex] = food;
