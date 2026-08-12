@@ -1,0 +1,1107 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fit Calendar</title>
+  <style>
+    :root {
+      --ink: #17201a;
+      --muted: #68756d;
+      --paper: #fffefa;
+      --soft: #f6f7f2;
+      --line: #dde6d8;
+      --green: #1f6b4d;
+      --green-2: #e7f3ea;
+      --blue: #246b9b;
+      --red: #d04a42;
+      --amber: #b7791f;
+      --violet: #6d5bd0;
+      --mint: #8ed1b2;
+      --sky: #88bfe8;
+      --peach: #efb07f;
+      --shadow: 0 18px 44px rgba(32, 40, 28, .1);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Tahoma, Arial, sans-serif;
+      min-height: 100vh;
+      background:
+        linear-gradient(90deg, rgba(31,107,77,.05) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(36,107,155,.045) 1px, transparent 1px),
+        linear-gradient(135deg, #f8faf2 0%, #edf7f4 42%, #fff4e8 100%);
+      background-size: 34px 34px, 34px 34px, auto;
+      color: var(--ink);
+    }
+
+    button, input, select { font: inherit; }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 15px;
+      background: linear-gradient(135deg, #1f6b4d, #2f8a62);
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(31, 107, 77, .18);
+      transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(31, 107, 77, .22); }
+    button.secondary { background: #e7eee3; color: var(--ink); }
+    button.ghost { background: transparent; color: var(--green); border: 1px solid var(--line); }
+    button.danger { background: var(--red); }
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 11px;
+      background: white;
+      color: var(--ink);
+      transition: border-color .16s ease, box-shadow .16s ease;
+    }
+    input:focus, select:focus { outline: 0; border-color: #78b992; box-shadow: 0 0 0 4px rgba(31,107,77,.11); }
+    label { display: block; margin: 10px 0 6px; color: var(--muted); font-size: 13px; }
+
+    .app { max-width: 1460px; margin: 0 auto; padding: 24px; }
+    .topbar {
+      position: sticky;
+      top: 12px;
+      z-index: 5;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+      padding: 12px 14px;
+      background: rgba(255, 254, 250, .78);
+      border: 1px solid rgba(221, 230, 216, .9);
+      border-radius: 8px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 14px 34px rgba(32,40,28,.08);
+    }
+    .brand { font-size: 34px; font-weight: 900; letter-spacing: 0; }
+    .brand span {
+      color: var(--green);
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .userbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .pill { border: 1px solid var(--line); background: rgba(255,255,255,.8); border-radius: 999px; padding: 9px 13px; color: var(--muted); }
+
+    .card {
+      position: relative;
+      background: linear-gradient(180deg, rgba(255, 254, 250, .97), rgba(255, 254, 250, .9));
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 3px;
+      border-radius: 8px 8px 0 0;
+      background: linear-gradient(90deg, var(--green), var(--blue), var(--peach));
+      opacity: .82;
+    }
+    .flat { box-shadow: none; background: white; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .workspace { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .auth { max-width: 980px; margin: 7vh auto; display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }
+    .hero { padding: 34px; min-height: 430px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+    .hero h1 { font-size: 46px; line-height: 1.08; margin: 18px 0 10px; }
+    .muted { color: var(--muted); line-height: 1.8; }
+    .notice { background: #fff8e9; border: 1px solid #f0d7aa; color: #5c4113; padding: 12px; border-radius: 8px; line-height: 1.8; }
+    .ok { background: var(--green-2); border: 1px solid #acd8b8; color: #14532d; padding: 12px; border-radius: 8px; line-height: 1.8; }
+
+    h1, h2, h3 { margin: 0 0 12px; }
+    .stepper { display: flex; gap: 8px; margin: 12px 0 18px; flex-wrap: wrap; }
+    .step { border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; color: var(--muted); background: rgba(255,255,255,.7); box-shadow: none; }
+    .step:hover { transform: none; box-shadow: none; border-color: #aac9b6; }
+    .step.active { background: var(--green); color: white; border-color: var(--green); }
+    .step:disabled { opacity: .45; cursor: default; }
+    .metric {
+      background: linear-gradient(180deg, #ffffff, #fbfdf8);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      min-height: 82px;
+      box-shadow: 0 8px 20px rgba(32,40,28,.05);
+    }
+    .metric small { display: block; color: var(--muted); margin-bottom: 5px; }
+    .metric b { display: block; font-size: 24px; }
+    .metric.good b { color: var(--green); }
+    .metric.warn b { color: var(--amber); }
+    .metric.bad b { color: var(--red); }
+
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+    th, td { border-bottom: 1px solid var(--line); padding: 9px; text-align: right; font-size: 13px; vertical-align: middle; }
+    th { background: #164e63; color: white; font-weight: 800; }
+    tr:last-child td { border-bottom: 0; }
+    .tiny { font-size: 12px; color: var(--muted); }
+    .food-list { display: grid; gap: 8px; max-height: 560px; overflow: auto; padding-left: 4px; }
+    .food-card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff, #fbfdf8);
+      border-radius: 8px;
+      padding: 10px;
+      cursor: grab;
+      box-shadow: 0 8px 18px rgba(32,40,28,.05);
+      transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+    }
+    .food-card:hover { border-color: #9ec7ad; transform: translateY(-1px); box-shadow: 0 12px 26px rgba(32,40,28,.09); }
+    .food-card b { display: block; color: #164e63; }
+    .food-card small { color: var(--muted); line-height: 1.7; }
+    .food-actions { display: flex; gap: 7px; margin-top: 9px; }
+    .food-actions button { padding: 7px 9px; font-size: 12px; }
+    .dropzone {
+      border: 2px dashed #b8c8bd;
+      border-radius: 8px;
+      padding: 12px;
+      background: linear-gradient(135deg, #f7faf5, #eef7fb);
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .dropzone.hot { border-color: var(--green); background: var(--green-2); color: var(--green); }
+    .entry-grid { display: grid; grid-template-columns: 2fr 100px repeat(6, 1fr) 42px; gap: 8px; align-items: end; }
+    .tabs { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+    .tabs button { background: #edf3ec; color: var(--ink); }
+    .tabs button.active { background: var(--green); color: white; }
+    .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    svg { width: 100%; height: 240px; background: linear-gradient(180deg, #ffffff, #fbfcf8); border: 1px solid var(--line); border-radius: 8px; }
+    .axis { stroke: #d6ddd2; stroke-dasharray: 3 3; }
+    .actual { fill: none; stroke: var(--blue); stroke-width: 3; }
+    .target { fill: none; stroke: var(--red); stroke-width: 2.4; }
+    .legend { display: flex; gap: 16px; color: var(--muted); font-size: 12px; margin-top: 6px; }
+    .legend i { width: 22px; height: 3px; display: inline-block; margin-left: 6px; vertical-align: middle; }
+    .water { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
+    .water button { background: white; color: var(--blue); border: 1px solid var(--line); aspect-ratio: 1; padding: 0; }
+    .water button.on { background: #dff1ff; border-color: #8fc8ec; }
+    .date-strip { display: grid; grid-template-columns: 42px 1fr 42px; gap: 10px; align-items: stretch; margin: 10px 0 16px; }
+    .date-strip > button { padding: 0; font-size: 22px; }
+    .date-rail { display: grid; grid-template-columns: repeat(9, minmax(86px, 1fr)); gap: 8px; overflow-x: auto; direction: ltr; }
+    .day-card { background: rgba(255,255,255,.75); color: var(--ink); border: 1px solid var(--line); box-shadow: none; padding: 8px; min-height: 68px; direction: rtl; }
+    .day-card.active { background: linear-gradient(135deg, var(--green), #2f8a62); color: white; border-color: var(--green); }
+    .day-card small, .day-card span { display: block; font-size: 11px; }
+    .day-card span { margin-top: 5px; font-weight: 900; }
+    .tracker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .tracker {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: linear-gradient(180deg, #fff, #fbfdf8);
+    }
+    .tracker-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 9px; }
+    .tracker-head b { font-size: 14px; }
+    .tracker-head span { color: var(--muted); font-size: 12px; }
+    .tracker-control { display: grid; grid-template-columns: 96px 1fr; gap: 10px; align-items: center; }
+    .tracker input[type="range"] { padding: 0; accent-color: var(--green); }
+    .tracker.good input[type="range"] { accent-color: var(--green); }
+    .tracker.warn input[type="range"] { accent-color: var(--amber); }
+    .tracker.bad input[type="range"] { accent-color: var(--red); }
+    .quick-range { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .quick-range button { padding: 8px 10px; font-size: 12px; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(17, 24, 20, .42); display: grid; place-items: center; padding: 16px; z-index: 10; }
+    .modal { width: min(720px, 100%); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.24); }
+    .axis-label { fill: #66736d; font-size: 11px; direction: ltr; }
+    .axis-value { fill: #46534b; font-size: 11px; direction: ltr; }
+    .hidden { display: none !important; }
+    .visual-stack { display: grid; grid-template-columns: 1.1fr .9fr; gap: 12px; margin-top: 26px; }
+    .hero-panel {
+      min-height: 172px;
+      border: 1px solid rgba(221,230,216,.9);
+      border-radius: 8px;
+      background: rgba(255,255,255,.74);
+      padding: 14px;
+      box-shadow: 0 16px 34px rgba(32,40,28,.08);
+    }
+    .hero-bars { display: grid; align-items: end; grid-template-columns: repeat(7, 1fr); gap: 8px; height: 120px; direction: ltr; }
+    .hero-bars i { display: block; border-radius: 6px 6px 2px 2px; background: linear-gradient(180deg, var(--blue), var(--mint)); min-height: 20px; }
+    .hero-rings { display: grid; gap: 10px; }
+    .ring-row { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: center; color: var(--muted); font-size: 13px; }
+    .ring {
+      width: 52px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--green) var(--p), #e8eee3 0);
+      color: var(--ink);
+      font-weight: 900;
+    }
+    .ring::after {
+      content: "";
+      width: 34px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: rgba(255,255,255,.88);
+      position: absolute;
+    }
+    .ring { position: relative; }
+    .ring span { position: relative; z-index: 1; font-size: 12px; }
+    .chart-card { background: rgba(255,255,255,.72); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+    .chart-card h3 { display: flex; align-items: center; gap: 8px; }
+    .chart-card h3::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--green)); display: inline-block; }
+
+    @media (max-width: 1050px) {
+      .auth, .workspace, .grid, .grid-3, .grid-4, .charts { grid-template-columns: 1fr; }
+      .entry-grid { grid-template-columns: 1fr 1fr; }
+      .hero h1 { font-size: 34px; }
+      .brand { font-size: 28px; }
+      .app { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <main id="root"></main>
+  <script>
+    const foods = [
+      [1,"سیب",52,0.3,0.2,14,2.4,86],
+      [2,"موز",89,1.1,0.3,23,2.6,75],
+      [3,"پرتقال",47,0.9,0.1,12,2.4,87],
+      [4,"توت فرنگی",32,0.7,0.3,7.7,2,91],
+      [5,"هندوانه",30,0.6,0.2,7.6,0.4,91],
+      [6,"خرما",282,2.5,0.4,75,8,21],
+      [7,"برنج سفید پخته",130,2.7,0.3,28,0.4,69],
+      [8,"برنج قهوه ای پخته",111,2.6,0.9,23,1.8,73],
+      [9,"نان سنگک",260,8.7,1.4,55,4.2,36],
+      [10,"نان لواش",275,9,1.2,56,3,33],
+      [11,"جو دوسر خشک",389,16.9,6.9,66,10.6,8],
+      [12,"سیب زمینی آب پز",87,1.9,0.1,20,1.8,77],
+      [13,"ماکارونی پخته",158,5.8,0.9,31,1.8,62],
+      [14,"سینه مرغ پخته",165,31,3.6,0,0,65],
+      [15,"ران مرغ پخته",209,26,10.9,0,0,63],
+      [16,"گوشت گوساله کم چرب",217,26,12,0,0,60],
+      [17,"ماهی سالمون",208,20,13,0,0,64],
+      [18,"تن ماهی در آب",116,26,1,0,0,72],
+      [19,"تخم مرغ کامل",155,13,11,1.1,0,76],
+      [20,"سفیده تخم مرغ",52,11,0.2,0.7,0,88],
+      [21,"ماست یونانی کم چرب",73,10,0.4,3.6,0,84],
+      [22,"ماست ساده",61,3.5,3.3,4.7,0,88],
+      [23,"شیر کم چرب",42,3.4,1,5,0,90],
+      [24,"پنیر سفید",264,14,21,4,0,55],
+      [25,"عدس پخته",116,9,0.4,20,7.9,69],
+      [26,"لوبیا چیتی پخته",143,9,0.7,26,9,63],
+      [27,"نخود پخته",164,8.9,2.6,27,7.6,60],
+      [28,"سویا پخته",173,16.6,9,9.9,6,63],
+      [29,"بادام",579,21,50,22,12.5,4],
+      [30,"گردو",654,15,65,14,6.7,4],
+      [31,"کره بادام زمینی",588,25,50,20,6,2],
+      [32,"روغن زیتون",884,0,100,0,0,0],
+      [33,"آووکادو",160,2,14.7,8.5,6.7,73],
+      [34,"خیار",15,0.7,0.1,3.6,0.5,95],
+      [35,"گوجه فرنگی",18,0.9,0.2,3.9,1.2,95],
+      [36,"کاهو",15,1.4,0.2,2.9,1.3,95],
+      [37,"بروکلی پخته",35,2.4,0.4,7.2,3.3,90],
+      [38,"هویج",41,0.9,0.2,10,2.8,88],
+      [39,"قارچ",22,3.1,0.3,3.3,1,92],
+      [40,"اسفناج",23,2.9,0.4,3.6,2.2,91],
+      [41,"موزارلا",280,28,17,3.1,0,50],
+      [42,"دوغ کم نمک",27,1.6,1,2.4,0,94],
+      [43,"عسل",304,0.3,0,82,0.2,17],
+      [44,"شکلات تلخ",546,4.9,31,61,7,1],
+      [45,"کشمش",299,3.1,0.5,79,3.7,15],
+      [46,"ذرت پخته",96,3.4,1.5,21,2.4,73],
+      [47,"بوقلمون پخته",189,29,7,0,0,65],
+      [48,"میگو پخته",99,24,0.3,0.2,0,74],
+      [49,"کدو سبز",17,1.2,0.3,3.1,1,95],
+      [50,"بادمجان پخته",35,0.8,0.2,8.7,2.5,90],
+      [51,"پروتئین وی",400,80,6,8,0,4],
+      [52,"کینوا پخته",120,4.4,1.9,21.3,2.8,72],
+      [53,"بلغور پخته",83,3.1,0.2,18.6,4.5,78],
+      [54,"حلوا ارده",516,13,32,47,5,2],
+      [55,"سیب زمینی سرخ کرده",312,3.4,15,41,3.8,38],
+      [56,"پیتزا پنیر",266,11,10,33,2.3,43],
+      [57,"همبرگر گوشت",295,17,14,24,1.3,43],
+      [58,"سالاد شیرازی",25,0.9,0.2,5,1.2,93],
+      [59,"خوراک لوبیا",110,6,3,16,5,72],
+      [60,"قورمه سبزی",151,8,10,7,2.5,72]
+    ].map(([id,name,cal,protein,fat,carbs,fiber,water]) => ({ id, name, cal, protein, fat, carbs, fiber, water }));
+
+    const storeKey = "fitCalendarLocalV2";
+    const state = JSON.parse(localStorage.getItem(storeKey) || "{}");
+    state.user ||= null;
+    state.profile ||= null;
+    state.plan ||= null;
+    state.plans ||= [];
+    if (state.plan && !state.plans.length) state.plans.push(state.plan);
+    state.customFoods ||= [];
+    state.foodOverrides ||= {};
+    state.logs ||= {};
+    state.currentDate ||= new Date().toISOString().slice(0, 10);
+    state.chartRange ||= { from: addDays(state.currentDate, -30), to: state.currentDate };
+    Object.values(state.foodOverrides).forEach(food => {
+      const index = foods.findIndex(x => x.id === food.id);
+      if (index >= 0) foods[index] = food;
+    });
+    state.customFoods.forEach(food => {
+      if (!foods.some(x => x.id === food.id)) foods.push(food);
+    });
+
+    const root = document.getElementById("root");
+    const save = () => localStorage.setItem(storeKey, JSON.stringify(state));
+    const $ = (selector) => document.querySelector(selector);
+    const f = (n, d = 0) => Number(n || 0).toLocaleString("fa-IR", { maximumFractionDigits: d, minimumFractionDigits: d });
+    const isoToday = () => new Date().toISOString().slice(0, 10);
+
+    function page(shell) {
+      root.innerHTML = `<div class="app">${shell}</div>`;
+    }
+
+    function topbar(extra = "") {
+      return `<div class="topbar">
+        <div class="brand">Fit <span>Calendar</span></div>
+        <div class="userbar">
+          ${state.user ? `<span class="pill">${state.user.email}</span><button class="secondary" onclick="logout()">خروج</button>` : ""}
+          ${extra}
+        </div>
+      </div>`;
+    }
+
+    function showAuth() {
+      root.innerHTML = `<div class="auth">
+        <section class="card hero">
+          <div>
+            <div class="brand">Fit <span>Calendar</span></div>
+            <h1>دفترچه هوشمند رژیم و پیشرفت</h1>
+            <p class="muted">اول مشخصات بدن را می‌گیرد، گزارش و هدف امن پیشنهاد می‌دهد، بعد لاگ روزانه غذا، آب، قدم، ورزش و وزن را با نمودارهای هدف و عملکرد نشان می‌دهد.</p>
+          </div>
+          <div class="visual-stack">
+            <div class="hero-panel">
+              <div class="tiny">نمای زنده پیشرفت</div>
+              <div class="hero-bars" aria-hidden="true">
+                <i style="height:42%"></i><i style="height:56%"></i><i style="height:50%"></i><i style="height:70%"></i><i style="height:64%"></i><i style="height:82%"></i><i style="height:76%"></i>
+              </div>
+            </div>
+            <div class="hero-panel hero-rings">
+              <div class="ring-row"><div class="ring" style="--p:78%"><span>78</span></div><span>پروتئین امروز</span></div>
+              <div class="ring-row"><div class="ring" style="--p:63%"><span>63</span></div><span>فیبر و آب</span></div>
+              <div class="ring-row"><div class="ring" style="--p:86%"><span>86</span></div><span>قدم روزانه</span></div>
+            </div>
+          </div>
+        </section>
+        <section class="card">
+          <h2>ورود یا ساخت حساب</h2>
+          <p class="muted">فعلاً نسخه محلی است؛ اطلاعات روی همین مرورگر ذخیره می‌شود.</p>
+          <label>ایمیل</label><input id="email" type="email" placeholder="name@example.com">
+          <label>یوزرنیم</label><input id="username" placeholder="مثلاً vahid">
+          <label>پسورد</label><input id="password" type="password" placeholder="حداقل ۶ کاراکتر">
+          <div class="grid" style="margin-top:12px">
+            <button onclick="signup()">ساخت حساب</button>
+            <button class="secondary" onclick="login()">ورود</button>
+          </div>
+          <p id="authMessage" class="notice hidden"></p>
+        </section>
+      </div>`;
+    }
+
+    function signup() {
+      const email = $("#email").value.trim();
+      const username = $("#username").value.trim();
+      const password = $("#password").value;
+      if (!email.includes("@") || username.length < 2 || password.length < 6) {
+        $("#authMessage").textContent = "ایمیل، یوزرنیم و پسورد حداقل ۶ کاراکتری را کامل وارد کن.";
+        $("#authMessage").classList.remove("hidden");
+        return;
+      }
+      state.user = { email, username };
+      save();
+      showProfile();
+    }
+
+    function login() {
+      const email = $("#email").value.trim();
+      if (!email.includes("@")) {
+        $("#authMessage").textContent = "برای ورود ایمیل را وارد کن. در نسخه محلی پسورد فقط برای شبیه‌سازی فرم است.";
+        $("#authMessage").classList.remove("hidden");
+        return;
+      }
+      state.user = { email, username: $("#username").value.trim() || email.split("@")[0] };
+      save();
+      if (!state.profile) showProfile();
+      else if (!currentPlanFor(state.currentDate)) showReport();
+      else showApp();
+    }
+
+    function logout() {
+      state.user = null;
+      save();
+      showAuth();
+    }
+
+    function showProfile() {
+      page(`${topbar()}${steps(2)}
+        <div class="grid">
+          <section class="card">
+            <h2>مشخصات اولیه</h2>
+            <div class="grid">
+              <div><label>جنسیت</label><select id="gender"><option value="male">مرد</option><option value="female">زن</option></select></div>
+              <div><label>سن</label><input id="age" type="number" value="${state.profile?.age || 30}"></div>
+              <div><label>قد (سانتی‌متر)</label><input id="height" type="number" value="${state.profile?.height || 175}"></div>
+              <div><label>وزن فعلی (کیلوگرم)</label><input id="weight" type="number" step="0.1" value="${state.profile?.weight || 85}"></div>
+              <div><label>میانگین قدم روزانه</label><input id="stepsNow" type="number" value="${state.profile?.stepsNow || state.plan?.steps || 8000}"></div>
+              <div><label>میانگین ورزش روزانه (دقیقه)</label><input id="exerciseNow" type="number" value="${state.profile?.exerciseNow || 20}"></div>
+            </div>
+            <button style="margin-top:14px" onclick="makeReport()">ساخت گزارش پیشنهادی</button>
+          </section>
+          <section class="card">
+            <h2>بعد از این مرحله چه می‌بینی؟</h2>
+            <p class="muted">من BMI، بازه وزن سالم، اضافه‌وزن تقریبی و سرعت امن کاهش وزن را حساب می‌کنم. بعد یک برنامه روزانه شامل کالری، پروتئین، چربی، کربوهیدرات، فیبر، آب، قدم و ورزش پیشنهاد می‌دهم.</p>
+            <div class="notice">هدف کاهش وزن را اول من پیشنهاد می‌دهم. بعد می‌توانی همان را قبول کنی یا مقدارها را دستی اصلاح کنی.</div>
+          </section>
+        </div>`);
+      if (state.profile?.gender) $("#gender").value = state.profile.gender;
+    }
+
+    function steps(active) {
+      const items = [
+        ["ورود", "showAuth()"],
+        ["مشخصات", state.user ? "showProfile()" : ""],
+        ["گزارش", state.profile ? "showReport()" : ""],
+        ["هدف", state.profile ? "showGoalEditor()" : ""],
+        ["لاگ روزانه", currentPlanFor(state.currentDate) ? "showApp()" : ""]
+      ];
+      return `<div class="stepper">
+        ${items.map(([label, action], i) => `<button class="step ${i + 1 === active ? "active" : ""}" ${action ? `onclick="${action}"` : "disabled"}>${label}</button>`).join("")}
+      </div>`;
+    }
+
+    function readProfile() {
+      return {
+        gender: $("#gender").value,
+        age: Number($("#age").value),
+        height: Number($("#height").value),
+        weight: Number($("#weight").value),
+        stepsNow: Number($("#stepsNow").value),
+        exerciseNow: Number($("#exerciseNow").value)
+      };
+    }
+
+    function analyze(profile) {
+      const heightM = profile.height / 100;
+      const bmi = profile.weight / (heightM * heightM);
+      const idealLow = 18.5 * heightM * heightM;
+      const idealHigh = 24.9 * heightM * heightM;
+      const idealTarget = 22 * heightM * heightM;
+      const extra = Math.max(0, profile.weight - idealHigh);
+      const bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + (profile.gender === "female" ? -161 : 5);
+      const activity = profile.exerciseNow >= 45 ? 1.5 : profile.stepsNow >= 10000 ? 1.45 : profile.stepsNow >= 8000 ? 1.38 : profile.stepsNow >= 6000 ? 1.3 : 1.22;
+      const maintenance = bmr * activity;
+      const safeMonthly = extra <= 0 ? 0 : Math.min(Math.max(profile.weight * 0.025, 1), 3);
+      const deficit = safeMonthly ? safeMonthly * 7700 / 30 : 0;
+      const calories = Math.max(profile.gender === "female" ? 1200 : 1500, Math.round(maintenance - deficit));
+      const protein = Math.round(Math.max(1.6 * idealTarget, 1.2 * profile.weight));
+      const fat = Math.round(Math.max(45, calories * 0.27 / 9));
+      const carbs = Math.round(Math.max(90, (calories - protein * 4 - fat * 9) / 4));
+      const category = bmi < 18.5 ? "کم‌وزن" : bmi < 25 ? "در بازه نرمال" : bmi < 30 ? "اضافه‌وزن" : "چاقی";
+      const steps = profile.stepsNow >= 10000 ? 10000 : profile.stepsNow >= 8000 ? 9000 : profile.stepsNow >= 6000 ? 8000 : 6500;
+      const exercise = profile.exerciseNow >= 30 ? profile.exerciseNow : 30;
+      return { bmi, idealLow, idealHigh, idealTarget, extra, maintenance, safeMonthly, calories, protein, fat, carbs, fiber: 30, waterGlasses: 8, steps, exercise, category };
+    }
+
+    function makeReport() {
+      const profile = readProfile();
+      if (!profile.age || !profile.height || !profile.weight) return;
+      state.profile = profile;
+      state.analysis = analyze(profile);
+      save();
+      showReport();
+    }
+
+    function showReport() {
+      const a = state.analysis || analyze(state.profile);
+      page(`${topbar()}${steps(3)}
+        <section class="card">
+          <h2>گزارش پیشنهادی من</h2>
+          <div class="grid-4">
+            <div class="metric ${a.bmi >= 25 ? "warn" : "good"}"><small>BMI</small><b>${f(a.bmi, 1)}</b><span class="tiny">${a.category}</span></div>
+            <div class="metric"><small>بازه وزن سالم</small><b>${f(a.idealLow, 1)} تا ${f(a.idealHigh, 1)}</b><span class="tiny">کیلوگرم</span></div>
+            <div class="metric ${a.extra > 0 ? "warn" : "good"}"><small>اضافه وزن تقریبی</small><b>${f(a.extra, 1)}</b><span class="tiny">نسبت به سقف بازه سالم</span></div>
+            <div class="metric good"><small>کاهش امن پیشنهادی</small><b>${a.safeMonthly ? f(a.safeMonthly, 1) : "۰"}</b><span class="tiny">کیلوگرم در ماه</span></div>
+          </div>
+          <p class="muted">پیشنهاد من کاهش آرام و قابل‌تداوم است: حدود ${a.safeMonthly ? f(a.safeMonthly, 1) : "۰"} کیلوگرم در ماه. این سرعت معمولاً فشار کمتری به بدن و اشتها وارد می‌کند و برای نگه‌داشتن عضله بهتر است. اگر بیماری زمینه‌ای، دارو، بارداری یا سابقه اختلال خوردن وجود دارد، برنامه باید با پزشک یا متخصص تغذیه هماهنگ شود.</p>
+          <table>
+            <tr><th>پارامتر</th><th>پیشنهاد روزانه</th><th>توضیح</th></tr>
+            <tr><td>کالری</td><td>${f(a.calories)} kcal</td><td>بر اساس متابولیسم، فعالیت فعلی و کاهش وزن امن</td></tr>
+            <tr><td>پروتئین</td><td>${f(a.protein)} g</td><td>برای سیری و حفظ عضله</td></tr>
+            <tr><td>چربی</td><td>${f(a.fat)} g</td><td>حد متعادل برای هورمون‌ها و سیری</td></tr>
+            <tr><td>کربوهیدرات</td><td>${f(a.carbs)} g</td><td>باقی کالری بعد از پروتئین و چربی</td></tr>
+            <tr><td>فیبر</td><td>${f(a.fiber)} g</td><td>حداقل مناسب برای کنترل اشتها و گوارش</td></tr>
+            <tr><td>آب</td><td>${f(a.waterGlasses)} لیوان</td><td>قابل تغییر در برنامه</td></tr>
+            <tr><td>قدم</td><td>${f(a.steps)} قدم</td><td>با توجه به تعداد قدم فعلی</td></tr>
+            <tr><td>ورزش</td><td>${f(a.exercise)} دقیقه</td><td>هدف روزانه قابل اجرا</td></tr>
+          </table>
+          <div class="grid" style="margin-top:14px">
+            <button onclick="acceptPlan()">قبول دارم، شروع کنیم</button>
+            <button class="secondary" onclick="showGoalEditor()">می‌خواهم هدف‌ها را اصلاح کنم</button>
+          </div>
+        </section>`);
+    }
+
+    function acceptPlan() {
+      const a = state.analysis || analyze(state.profile);
+      addPlanVersion({
+        effectiveFrom: isoToday(),
+        monthlyLoss: a.safeMonthly,
+        calories: a.calories,
+        protein: a.protein,
+        fat: a.fat,
+        carbs: a.carbs,
+        fiber: a.fiber,
+        waterGlasses: a.waterGlasses,
+        steps: a.steps,
+        exercise: a.exercise
+      });
+      save();
+      showApp();
+    }
+
+    function showGoalEditor() {
+      const current = currentPlanFor(state.currentDate) || state.plan || (state.analysis ? {
+        monthlyLoss: state.analysis.safeMonthly,
+        steps: state.analysis.steps,
+        exercise: state.analysis.exercise
+      } : {});
+      page(`${topbar()}${steps(4)}
+        <section class="card">
+          <h2>هدف‌گذاری هوشمند</h2>
+          <p class="muted">تو فقط سه چیز را مشخص کن: کاهش وزن ماهانه، قدم روزانه و مدت ورزش. کالری، پروتئین، چربی، کربوهیدرات و فیبر را من بر اساس مشخصات بدنت زنده حساب می‌کنم.</p>
+          <div class="grid-3">
+            <div><label>از تاریخ</label><input id="effectiveFrom" type="date" value="${isoToday()}"></div>
+            <div><label>کاهش وزن ماهانه (kg)</label><input id="monthlyLoss" type="number" step="0.1" value="${current.monthlyLoss || (state.analysis?.safeMonthly || 1.5)}" oninput="previewGoal()"></div>
+            <div><label>قدم روزانه</label><input id="goalSteps" type="number" value="${current.steps || 8000}" oninput="previewGoal()"></div>
+            <div><label>ورزش روزانه (دقیقه)</label><input id="goalExercise" type="number" value="${current.exercise || 30}" oninput="previewGoal()"></div>
+          </div>
+          <div id="goalPreview" style="margin-top:14px"></div>
+          <button style="margin-top:14px" onclick="saveEditedPlan()">ذخیره هدف از این تاریخ</button>
+        </section>`);
+      previewGoal();
+    }
+
+    function saveEditedPlan() {
+      addPlanVersion(buildPlanFromInputs());
+      save();
+      showApp();
+    }
+
+    function buildPlanFromInputs() {
+      const p = {
+        monthlyLoss: Number($("#monthlyLoss").value),
+        steps: Number($("#goalSteps").value),
+        exercise: Number($("#goalExercise").value)
+      };
+      const computed = planFromActivity(state.profile, p.monthlyLoss, p.steps, p.exercise);
+      return { effectiveFrom: $("#effectiveFrom").value, monthlyLoss: p.monthlyLoss, ...computed };
+    }
+
+    function previewGoal() {
+      const p = buildPlanFromInputs();
+      $("#goalPreview").innerHTML = `<div class="grid-4">
+        <div class="metric"><small>کالری</small><b>${f(p.calories)} kcal</b></div>
+        <div class="metric"><small>پروتئین</small><b>${f(p.protein)} g</b></div>
+        <div class="metric"><small>چربی</small><b>${f(p.fat)} g</b></div>
+        <div class="metric"><small>کربوهیدرات</small><b>${f(p.carbs)} g</b></div>
+        <div class="metric"><small>فیبر</small><b>${f(p.fiber)} g</b></div>
+        <div class="metric"><small>آب</small><b>${f(p.waterGlasses)} لیوان</b></div>
+        <div class="metric"><small>قدم</small><b>${f(p.steps)}</b></div>
+        <div class="metric"><small>ورزش</small><b>${f(p.exercise)} دقیقه</b></div>
+      </div>`;
+    }
+
+    function planFromActivity(profile, monthlyLoss, steps, exercise) {
+      const heightM = profile.height / 100;
+      const idealTarget = 22 * heightM * heightM;
+      const bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + (profile.gender === "female" ? -161 : 5);
+      const activity = steps >= 10000 ? 1.48 : steps >= 8000 ? 1.4 : steps >= 6500 ? 1.32 : 1.22;
+      const exerciseBoost = Math.min(0.12, Math.max(0, exercise - 20) / 250);
+      const maintenance = bmr * (activity + exerciseBoost);
+      const calories = Math.max(profile.gender === "female" ? 1200 : 1500, Math.round(maintenance - Math.max(0, monthlyLoss) * 7700 / 30));
+      const protein = Math.round(Math.max(1.6 * idealTarget, 1.2 * profile.weight));
+      const fat = Math.round(Math.max(45, calories * 0.27 / 9));
+      const carbs = Math.round(Math.max(90, (calories - protein * 4 - fat * 9) / 4));
+      return { calories, protein, fat, carbs, fiber: 30, waterGlasses: 8, steps, exercise };
+    }
+
+    function addPlanVersion(plan) {
+      state.plans = (state.plans || []).filter(p => p.effectiveFrom !== plan.effectiveFrom);
+      state.plans.push(plan);
+      state.plans.sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+      state.plan = plan;
+    }
+
+    function currentPlanFor(date) {
+      const plans = [...(state.plans || [])].sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+      if (!plans.length) return state.plan;
+      return plans.filter(p => p.effectiveFrom <= date).pop() || plans[0];
+    }
+
+    function currentLog() {
+      state.logs[state.currentDate] ||= { date: state.currentDate, entries: [], water: 0, steps: 0, exercise: 0, weight: "" };
+      return state.logs[state.currentDate];
+    }
+
+    function totals(log = currentLog()) {
+      return log.entries.reduce((sum, e) => {
+        const food = foods.find(x => x.id === e.foodId);
+        if (!food) return sum;
+        const u = Number(e.units || 0);
+        sum.cal += food.cal * u;
+        sum.protein += food.protein * u;
+        sum.fat += food.fat * u;
+        sum.carbs += food.carbs * u;
+        sum.fiber += food.fiber * u;
+        sum.foodWater += food.water * u;
+        return sum;
+      }, { cal: 0, protein: 0, fat: 0, carbs: 0, fiber: 0, foodWater: 0 });
+    }
+
+    function showApp() {
+      const log = currentLog();
+      const t = totals(log);
+      const plan = currentPlanFor(state.currentDate);
+      page(`${topbar(`<button class="ghost" onclick="showProfile()">اصلاح پروفایل</button>`)}${steps(5)}
+        <div class="grid-4">
+          ${metric("کالری", t.cal, plan.calories, "kcal")}
+          ${metric("پروتئین", t.protein, plan.protein, "g")}
+          ${metric("فیبر", t.fiber, plan.fiber, "g")}
+          ${metric("قدم", log.steps, plan.steps, "")}
+        </div>
+        <div class="workspace" style="margin-top:16px">
+          <aside class="card">
+            <h2>دیتابیس غذا</h2>
+            <p class="muted">روی غذا کلیک کن یا کارت را بکش داخل لاگ. غذای جدید هم می‌توانی به دیتابیس اضافه کنی.</p>
+            <label>جستجو</label><input id="foodSearch" oninput="renderFoods()" placeholder="مثلاً مرغ، برنج، سیب">
+            <button class="secondary" style="margin-top:10px" onclick="openFoodModal()">افزودن غذای جدید</button>
+            <div id="foodList" class="food-list" style="margin-top:12px"></div>
+          </aside>
+          <section>
+            <div class="card">
+              <div class="grid">
+                <div><label>تاریخ</label><input id="datePicker" type="date" value="${state.currentDate}" onchange="changeDate(this.value)"></div>
+                <div><label>واحد پیش‌فرض هر غذا</label><input id="defaultUnits" type="number" step="0.1" value="1"></div>
+              </div>
+              ${dateStrip()}
+              <div id="dropzone" class="dropzone">غذا را اینجا رها کن یا از دیتابیس کلیک کن</div>
+              <div id="entries"></div>
+              <h3 style="margin-top:16px">آب، قدم، ورزش و وزن</h3>
+              <div class="tracker-grid">
+                ${tracker("water", "لیوان آب", log.water || 0, plan.waterGlasses || 8, "لیوان", 1)}
+                ${tracker("steps", "قدم امروز", log.steps || 0, plan.steps || 8000, "قدم", 100)}
+                ${tracker("exercise", "ورزش امروز", log.exercise || 0, plan.exercise || 30, "دقیقه", 5)}
+              </div>
+              <div class="grid-3" style="margin-top:12px">
+                <div><label>وزن امروز (kg)</label><input id="weightInput" type="number" step="0.1" value="${log.weight || ""}" onchange="setDaily('weight', this.value)"></div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:16px">
+              <div class="grid">
+                <div><label>شروع نمودار</label><input id="chartFrom" type="date" value="${state.chartRange.from || addDays(state.currentDate, -30)}" onchange="setChartRangeFromInputs()"></div>
+                <div><label>پایان نمودار</label><input id="chartTo" type="date" value="${state.chartRange.to || state.currentDate}" onchange="setChartRangeFromInputs()"></div>
+              </div>
+              <div class="quick-range">
+                <button class="secondary" onclick="quickRange(7)">هفته گذشته</button>
+                <button class="secondary" onclick="quickRange(30)">ماه گذشته</button>
+                <button class="secondary" onclick="quickRange(90)">سه ماه گذشته</button>
+                <button class="secondary" onclick="quickRange(365)">سال گذشته</button>
+                <button class="ghost" onclick="setChartRangeFromInputs()">اعمال بازه</button>
+              </div>
+              <div id="charts" class="charts" style="margin-top:14px"></div>
+            </div>
+          </section>
+        </div>`);
+      renderFoods();
+      renderEntries();
+      renderCharts();
+      setupDropzone();
+    }
+
+    function metric(label, actual, target, unit) {
+      const ratio = target ? actual / target : 0;
+      const cls = ratio >= .9 && ratio <= 1.15 ? "good" : ratio >= .65 ? "warn" : "bad";
+      return `<div class="metric ${cls}"><small>${label}</small><b>${f(actual, label === "قدم" ? 0 : 1)} ${unit}</b><span class="tiny">هدف: ${f(target, 0)} ${unit}</span></div>`;
+    }
+
+    function tracker(key, label, value, target, unit, step) {
+      const max = Math.max(step, Number(target || 0) * 2);
+      const ratio = target ? Number(value || 0) / target : 0;
+      const cls = ratio >= .85 && ratio <= 1.25 ? "good" : ratio >= .45 ? "warn" : "bad";
+      return `<div class="tracker ${cls}" id="${key}Tracker">
+        <div class="tracker-head"><b>${label}</b><span>هدف: ${f(target, 0)} ${unit}</span></div>
+        <div class="tracker-control">
+          <input id="${key}Number" type="number" min="0" max="${max}" step="${step}" value="${value}" oninput="syncDaily('${key}', this.value)">
+          <input id="${key}Range" type="range" min="0" max="${max}" step="${step}" value="${value}" oninput="syncDaily('${key}', this.value)">
+        </div>
+      </div>`;
+    }
+
+    function dateStrip() {
+      const days = dateRange(addDays(state.currentDate, -4), addDays(state.currentDate, 4));
+      return `<div class="date-strip">
+        <button class="secondary" onclick="shiftDate(-1)">‹</button>
+        <div class="date-rail">
+          ${days.map(date => {
+            const total = totals(state.logs[date] || { entries: [] }).cal;
+            return `<button class="day-card ${date === state.currentDate ? "active" : ""}" onclick="changeDate('${date}')">
+              <small>${weekday(date)} ${date.slice(5)}</small>
+              <span>${f(total, 0)} kcal</span>
+            </button>`;
+          }).join("")}
+        </div>
+        <button class="secondary" onclick="shiftDate(1)">›</button>
+      </div>`;
+    }
+
+    function weekday(date) {
+      return new Date(date + "T12:00:00").toLocaleDateString("fa-IR", { weekday: "short" });
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date + "T12:00:00");
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[ch]));
+    }
+
+    function isCustomFood(id) {
+      return state.customFoods.some(food => food.id === id);
+    }
+
+    function renderFoods() {
+      const q = ($("#foodSearch")?.value || "").trim();
+      const list = foods.filter(food => !q || food.name.includes(q) || String(food.id) === q).slice(0, 80);
+      $("#foodList").innerHTML = list.map(food => `<div class="food-card" draggable="true" ondragstart="dragFood(event, ${food.id})" onclick="addFood(${food.id})">
+        <b>${food.id}. ${esc(food.name)}</b>
+        <small>${food.cal} kcal | پروتئین ${food.protein}g | فیبر ${food.fiber}g در ۱۰۰ گرم</small>
+        <div class="food-actions">
+          <button class="ghost" onclick="event.stopPropagation(); openFoodModal(${food.id})">ویرایش</button>
+          ${isCustomFood(food.id) ? `<button class="danger" onclick="event.stopPropagation(); deleteFood(${food.id})">حذف</button>` : ""}
+        </div>
+      </div>`).join("");
+    }
+
+    function dragFood(event, id) {
+      event.dataTransfer.setData("foodId", String(id));
+    }
+
+    function setupDropzone() {
+      const z = $("#dropzone");
+      z.ondragover = (event) => { event.preventDefault(); z.classList.add("hot"); };
+      z.ondragleave = () => z.classList.remove("hot");
+      z.ondrop = (event) => {
+        event.preventDefault();
+        z.classList.remove("hot");
+        addFood(Number(event.dataTransfer.getData("foodId")));
+      };
+    }
+
+    function addFood(foodId) {
+      if (!foods.find(x => x.id === foodId)) return;
+      currentLog().entries.push({ foodId, units: Number($("#defaultUnits")?.value || 1) });
+      save();
+      showApp();
+    }
+
+    function renderEntries() {
+      const log = currentLog();
+      if (!log.entries.length) {
+        $("#entries").innerHTML = `<div class="notice">هنوز غذایی برای این روز ثبت نشده.</div>`;
+        return;
+      }
+      $("#entries").innerHTML = `<table>
+        <tr><th>غذا</th><th>واحد ۱۰۰g</th><th>کالری</th><th>پروتئین</th><th>چربی</th><th>کربوهیدرات</th><th>فیبر</th><th></th></tr>
+        ${log.entries.map((entry, index) => {
+          const food = foods.find(x => x.id === entry.foodId);
+          if (!food) return "";
+          const u = Number(entry.units || 0);
+          return `<tr>
+            <td>${food.id}. ${esc(food.name)}</td>
+            <td><input type="number" step="0.1" value="${u}" onchange="setUnits(${index}, this.value)"></td>
+            <td>${f(food.cal * u, 1)}</td>
+            <td>${f(food.protein * u, 1)}</td>
+            <td>${f(food.fat * u, 1)}</td>
+            <td>${f(food.carbs * u, 1)}</td>
+            <td>${f(food.fiber * u, 1)}</td>
+            <td><button class="danger" onclick="removeEntry(${index})">حذف</button></td>
+          </tr>`;
+        }).join("")}
+      </table>`;
+    }
+
+    function setUnits(index, value) {
+      currentLog().entries[index].units = Number(value);
+      save();
+      showApp();
+    }
+
+    function removeEntry(index) {
+      currentLog().entries.splice(index, 1);
+      save();
+      showApp();
+    }
+
+    function setWater(count) {
+      currentLog().water = count;
+      save();
+      showApp();
+    }
+
+    function setDaily(key, value, quiet = false) {
+      currentLog()[key] = key === "weight" ? value : Number(value);
+      save();
+      if (!quiet) showApp();
+    }
+
+    function syncDaily(key, value) {
+      const number = Number(value || 0);
+      currentLog()[key] = number;
+      const numberInput = $(`#${key}Number`);
+      const rangeInput = $(`#${key}Range`);
+      if (numberInput && numberInput.value !== String(value)) numberInput.value = value;
+      if (rangeInput && rangeInput.value !== String(value)) rangeInput.value = value;
+      const plan = currentPlanFor(state.currentDate);
+      const target = key === "water" ? plan.waterGlasses : plan[key];
+      const ratio = target ? number / target : 0;
+      const cls = ratio >= .85 && ratio <= 1.25 ? "good" : ratio >= .45 ? "warn" : "bad";
+      const box = $(`#${key}Tracker`);
+      if (box) box.className = `tracker ${cls}`;
+      save();
+      renderCharts();
+    }
+
+    function changeDate(value) {
+      state.currentDate = value;
+      save();
+      showApp();
+    }
+
+    function shiftDate(days) {
+      changeDate(addDays(state.currentDate, days));
+    }
+
+    function setChartRangeFromInputs() {
+      state.chartRange = {
+        from: $("#chartFrom")?.value || state.chartRange?.from || state.currentDate,
+        to: $("#chartTo")?.value || state.chartRange?.to || state.currentDate
+      };
+      save();
+      renderCharts();
+    }
+
+    function quickRange(days) {
+      const end = state.currentDate || isoToday();
+      state.chartRange = { from: addDays(end, -(days - 1)), to: end };
+      const fromInput = $("#chartFrom");
+      const toInput = $("#chartTo");
+      if (fromInput) fromInput.value = state.chartRange.from;
+      if (toInput) toInput.value = state.chartRange.to;
+      save();
+      renderCharts();
+    }
+
+    function dailyRows() {
+      return Object.values(state.logs).sort((a, b) => a.date.localeCompare(b.date)).map(log => {
+        const t = totals(log);
+        return { date: log.date, ...t, water: log.water || 0, steps: log.steps || 0, exercise: log.exercise || 0, weight: Number(log.weight || 0) };
+      });
+    }
+
+    function renderCharts() {
+      const rows = chartRows();
+      $("#charts").innerHTML = [
+        ["کالری", "cal", "calories"],
+        ["پروتئین", "protein", "protein"],
+        ["چربی", "fat", "fat"],
+        ["کربوهیدرات", "carbs", "carbs"],
+        ["فیبر", "fiber", "fiber"],
+        ["آب", "water", "waterGlasses"],
+        ["قدم", "steps", "steps"],
+        ["وزن", "weight", null]
+      ].map(([title, key, target]) => chart(title, rows, key, target)).join("");
+    }
+
+    function chartRows() {
+      const logged = dailyRows();
+      const dates = logged.map(r => r.date);
+      const first = state.chartRange?.from || $("#chartFrom")?.value || dates[0] || state.currentDate || isoToday();
+      const last = state.chartRange?.to || $("#chartTo")?.value || dates.at(-1) || state.currentDate || isoToday();
+      const from = first <= last ? first : last;
+      const to = first <= last ? last : first;
+      const byDate = Object.fromEntries(logged.map(r => [r.date, r]));
+      return dateRange(from, to).map(date => byDate[date] || {
+        date,
+        cal: 0,
+        protein: 0,
+        fat: 0,
+        carbs: 0,
+        fiber: 0,
+        foodWater: 0,
+        water: 0,
+        steps: 0,
+        exercise: 0,
+        weight: 0
+      });
+    }
+
+    function dateRange(from, to) {
+      const out = [];
+      const d = new Date(from + "T12:00:00");
+      const end = new Date(to + "T12:00:00");
+      let guard = 0;
+      while (d <= end && guard < 370) {
+        out.push(d.toISOString().slice(0, 10));
+        d.setDate(d.getDate() + 1);
+        guard++;
+      }
+      return out;
+    }
+
+    function chart(title, rows, key, targetKey) {
+      const targetValues = targetKey ? rows.map(r => Number(currentPlanFor(r.date)?.[targetKey] || 0)) : [];
+      const max = niceMax(Math.max(1, ...rows.map(r => Number(r[key] || 0)), ...targetValues));
+      const plotLeft = 72;
+      const plotRight = 610;
+      const plotTop = 34;
+      const plotBottom = 205;
+      const x = (i) => plotLeft + i * ((plotRight - plotLeft) / Math.max(1, rows.length - 1));
+      const y = (v) => plotBottom - (Number(v || 0) / max) * (plotBottom - plotTop);
+      const actual = rows.map((r, i) => `${x(i)},${y(r[key])}`).join(" ");
+      const goalLine = targetKey && rows.length ? `<polyline class="target" points="${stepPoints(rows, x, y, targetKey)}"/>` : "";
+      const ticks = [0, .25, .5, .75, 1].map(part => {
+        const value = max * part;
+        const yy = y(value);
+        return `<line class="axis" x1="${plotLeft}" y1="${yy}" x2="${plotRight}" y2="${yy}"></line><text class="axis-value" x="${plotLeft - 10}" y="${yy + 4}" text-anchor="end">${f(value, value < 10 ? 1 : 0)}</text>`;
+      }).join("");
+      const xLabels = rows.length ? rows
+        .map((r, i) => ({ r, i }))
+        .filter(({ i }) => rows.length <= 5 || i === 0 || i === rows.length - 1 || i === Math.floor((rows.length - 1) / 2) || i === Math.floor((rows.length - 1) / 4) || i === Math.floor((rows.length - 1) * 3 / 4))
+        .map(({ r, i }) => `<text class="axis-label" x="${x(i)}" y="225" text-anchor="middle">${r.date.slice(5)}</text>`)
+        .join("") : "";
+      return `<div class="chart-card">
+        <h3>${title}</h3>
+        <svg viewBox="0 0 630 235" role="img" aria-label="نمودار ${title}">
+          ${ticks}
+          <line class="axis" x1="${plotLeft}" y1="${plotTop}" x2="${plotLeft}" y2="${plotBottom}"></line>
+          ${goalLine}
+          <polyline class="actual" points="${actual}"></polyline>
+          ${xLabels}
+        </svg>
+        <div class="legend"><span><i style="background:var(--blue)"></i>مصرف</span>${targetKey ? `<span><i style="background:var(--red)"></i>هدف</span>` : ""}</div>
+      </div>`;
+    }
+
+    function stepPoints(rows, x, y, targetKey) {
+      const points = [];
+      rows.forEach((row, i) => {
+        const value = Number(currentPlanFor(row.date)?.[targetKey] || 0);
+        if (i === 0) {
+          points.push(`${x(i)},${y(value)}`);
+        } else {
+          const previous = Number(currentPlanFor(rows[i - 1].date)?.[targetKey] || 0);
+          points.push(`${x(i)},${y(previous)}`);
+          points.push(`${x(i)},${y(value)}`);
+        }
+      });
+      return points.join(" ");
+    }
+
+    function niceMax(value) {
+      const power = Math.pow(10, Math.floor(Math.log10(value)));
+      const normalized = value / power;
+      const nice = normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+      return nice * power;
+    }
+
+    function openFoodModal(foodId = null) {
+      const food = foodId ? foods.find(item => item.id === foodId) : null;
+      document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="foodModal">
+        <div class="modal">
+          <h2>${food ? "ویرایش غذا" : "افزودن غذای جدید به دیتابیس"}</h2>
+          <p class="muted">${food ? "مقدارهای این غذا را به ازای ۱۰۰ گرم اصلاح کن." : "مقدارها را به ازای ۱۰۰ گرم وارد کن. شماره غذا خودکار ساخته می‌شود."}</p>
+          <input id="editingFoodId" type="hidden" value="${food?.id || ""}">
+          <div class="grid-3">
+            <div><label>نام غذا</label><input id="newFoodName" value="${esc(food?.name || "")}"></div>
+            <div><label>کالری (kcal/100g)</label><input id="newFoodCal" type="number" value="${food?.cal || ""}"></div>
+            <div><label>پروتئین (g/100g)</label><input id="newFoodProtein" type="number" step="0.1" value="${food?.protein || ""}"></div>
+            <div><label>چربی (g/100g)</label><input id="newFoodFat" type="number" step="0.1" value="${food?.fat || ""}"></div>
+            <div><label>کربوهیدرات (g/100g)</label><input id="newFoodCarbs" type="number" step="0.1" value="${food?.carbs || ""}"></div>
+            <div><label>فیبر (g/100g)</label><input id="newFoodFiber" type="number" step="0.1" value="${food?.fiber || ""}"></div>
+            <div><label>آب (g/100g)</label><input id="newFoodWater" type="number" step="0.1" value="${food?.water || ""}"></div>
+          </div>
+          <div class="grid" style="margin-top:14px">
+            <button onclick="saveFood()">${food ? "ذخیره تغییرات" : "افزودن به لیست"}</button>
+            <button class="secondary" onclick="closeFoodModal()">انصراف</button>
+          </div>
+        </div>
+      </div>`);
+      $("#newFoodName").focus();
+    }
+
+    function closeFoodModal() {
+      $("#foodModal")?.remove();
+    }
+
+    function saveFood() {
+      const editingId = Number($("#editingFoodId").value || 0);
+      const name = $("#newFoodName").value.trim();
+      if (!name) return;
+      const id = editingId || Math.max(...foods.map(food => food.id)) + 1;
+      const food = {
+        id,
+        name,
+        cal: Number($("#newFoodCal").value || 0),
+        protein: Number($("#newFoodProtein").value || 0),
+        fat: Number($("#newFoodFat").value || 0),
+        carbs: Number($("#newFoodCarbs").value || 0),
+        fiber: Number($("#newFoodFiber").value || 0),
+        water: Number($("#newFoodWater").value || 0)
+      };
+      const existingIndex = foods.findIndex(item => item.id === id);
+      if (existingIndex >= 0) foods[existingIndex] = food;
+      else foods.push(food);
+      if (isCustomFood(id) || !editingId) {
+        const customIndex = state.customFoods.findIndex(item => item.id === id);
+        if (customIndex >= 0) state.customFoods[customIndex] = food;
+        else state.customFoods.push(food);
+      } else {
+        state.foodOverrides[id] = food;
+      }
+      save();
+      closeFoodModal();
+      showApp();
+    }
+
+    function saveNewFood() {
+      saveFood();
+    }
+
+    function deleteFood(id) {
+      if (!isCustomFood(id)) return;
+      if (!confirm("این غذا از دیتابیس و لاگ‌های ثبت‌شده حذف شود؟")) return;
+      const index = foods.findIndex(food => food.id === id);
+      if (index >= 0) foods.splice(index, 1);
+      state.customFoods = state.customFoods.filter(food => food.id !== id);
+      Object.values(state.logs).forEach(log => {
+        log.entries = (log.entries || []).filter(entry => entry.foodId !== id);
+      });
+      save();
+      showApp();
+    }
+
+    if (!state.user) showAuth();
+    else if (!state.profile) showProfile();
+    else if (!currentPlanFor(state.currentDate)) showReport();
+    else showApp();
+  </script>
+</body>
+</html>
