@@ -247,6 +247,16 @@
     .tracker.bad input[type="range"] { accent-color: var(--red); }
     .quick-range { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .quick-range button { padding: 8px 10px; font-size: 12px; }
+    .chart-tools { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 14px; align-items: start; }
+    .chart-picker {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.74);
+      padding: 12px;
+    }
+    .chart-picker h3 { font-size: 15px; margin-bottom: 8px; }
+    .chart-choice { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; margin: 8px 0; }
+    .chart-choice input { width: auto; accent-color: var(--green); }
     .modal-backdrop { position: fixed; inset: 0; background: rgba(17, 24, 20, .42); display: grid; place-items: center; padding: 16px; z-index: 10; }
     .modal { width: min(720px, 100%); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.24); }
     .axis-label { fill: #66736d; font-size: 11px; direction: ltr; }
@@ -290,7 +300,7 @@
     .chart-card h3::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--green)); display: inline-block; }
 
     @media (max-width: 1050px) {
-      .auth, .workspace, .grid, .grid-3, .grid-4, .charts, .metrics-board { grid-template-columns: 1fr; }
+      .auth, .workspace, .grid, .grid-3, .grid-4, .charts, .metrics-board, .chart-tools { grid-template-columns: 1fr; }
       .entry-grid { grid-template-columns: 1fr 1fr; }
       .hero h1 { font-size: 34px; }
       .brand { font-size: 28px; }
@@ -462,6 +472,7 @@
         customFoods: [],
         foodOverrides: {},
         foodTab: "all",
+        visibleCharts: defaultChartKeys(),
         logs: {},
         currentDate,
         chartRange: { from: addDays(currentDate, -30), to: currentDate }
@@ -477,6 +488,7 @@
       next.customFoods ||= [];
       next.foodOverrides ||= {};
       next.foodTab ||= "all";
+      next.visibleCharts ||= defaultChartKeys();
       next.logs ||= {};
       next.currentDate ||= isoToday();
       next.chartRange ||= { from: addDays(next.currentDate, -30), to: next.currentDate };
@@ -504,6 +516,7 @@
         customFoods: state.customFoods || [],
         foodOverrides: state.foodOverrides || {},
         foodTab: state.foodTab || "all",
+        visibleCharts: state.visibleCharts || defaultChartKeys(),
         logs: state.logs || {},
         currentDate: state.currentDate || isoToday(),
         chartRange: state.chartRange || { from: addDays(state.currentDate || isoToday(), -30), to: state.currentDate || isoToday() }
@@ -925,7 +938,13 @@
                 <button class="secondary" onclick="quickRange(365)">سال گذشته</button>
                 <button class="ghost" onclick="setChartRangeFromInputs()">اعمال بازه</button>
               </div>
-              <div id="charts" class="charts" style="margin-top:14px"></div>
+              <div class="chart-tools" style="margin-top:14px">
+                <aside class="chart-picker">
+                  <h3>انتخاب نمودار</h3>
+                  <div id="chartPicker">${chartPicker()}</div>
+                </aside>
+                <div id="charts" class="charts"></div>
+              </div>
             </div>
           </section>
         </div>`);
@@ -1206,18 +1225,47 @@
       });
     }
 
+    function chartDefinitions() {
+      return [
+        ["cal", "کالری", "cal", "calories"],
+        ["protein", "پروتئین", "protein", "protein"],
+        ["fat", "چربی", "fat", "fat"],
+        ["carbs", "کربوهیدرات", "carbs", "carbs"],
+        ["fiber", "فیبر", "fiber", "fiber"],
+        ["water", "آب", "water", "waterGlasses"],
+        ["steps", "قدم", "steps", "steps"],
+        ["weight", "وزن", "weight", null]
+      ];
+    }
+
+    function defaultChartKeys() {
+      return chartDefinitions().map(([key]) => key);
+    }
+
+    function chartPicker() {
+      const selected = new Set(state.visibleCharts || defaultChartKeys());
+      return chartDefinitions().map(([key, title]) => `<label class="chart-choice">
+        <input type="checkbox" ${selected.has(key) ? "checked" : ""} onchange="toggleChart('${key}', this.checked)">
+        <span>${title}</span>
+      </label>`).join("");
+    }
+
+    function toggleChart(key, checked) {
+      const selected = new Set(state.visibleCharts || defaultChartKeys());
+      if (checked) selected.add(key);
+      else selected.delete(key);
+      state.visibleCharts = [...selected];
+      save();
+      renderCharts();
+    }
+
     function renderCharts() {
       const rows = chartRows();
-      $("#charts").innerHTML = [
-        ["کالری", "cal", "calories"],
-        ["پروتئین", "protein", "protein"],
-        ["چربی", "fat", "fat"],
-        ["کربوهیدرات", "carbs", "carbs"],
-        ["فیبر", "fiber", "fiber"],
-        ["آب", "water", "waterGlasses"],
-        ["قدم", "steps", "steps"],
-        ["وزن", "weight", null]
-      ].map(([title, key, target]) => chart(title, rows, key, target)).join("");
+      const selected = new Set(state.visibleCharts || defaultChartKeys());
+      const chosen = chartDefinitions().filter(([id]) => selected.has(id));
+      $("#charts").innerHTML = chosen.length
+        ? chosen.map(([, title, key, target]) => chart(title, rows, key, target)).join("")
+        : `<div class="notice">هیچ نموداری انتخاب نشده. از سمت چپ حداقل یکی را تیک بزن.</div>`;
     }
 
     function chartRows() {
