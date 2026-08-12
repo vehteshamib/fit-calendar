@@ -140,6 +140,41 @@
     .metric.good b { color: var(--green); }
     .metric.warn b { color: var(--amber); }
     .metric.bad b { color: var(--red); }
+    .metrics-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .metric.summary {
+      min-height: 118px;
+      display: grid;
+      grid-template-columns: 1fr 68px;
+      gap: 10px;
+      align-items: center;
+    }
+    .metric.summary small { margin-bottom: 7px; }
+    .metric.summary b { font-size: 22px; }
+    .metric.summary .tiny { display: block; margin-top: 6px; }
+    .metric-ring {
+      width: 62px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--status) var(--p), #e9eee5 0);
+      color: var(--ink);
+      font-weight: 900;
+      position: relative;
+    }
+    .metric-ring::after {
+      content: "";
+      width: 42px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: white;
+      position: absolute;
+      box-shadow: inset 0 0 0 1px rgba(221,230,216,.8);
+    }
+    .metric-ring span { position: relative; z-index: 1; font-size: 13px; }
+    .metric.summary.good { --status: var(--green); }
+    .metric.summary.warn { --status: var(--amber); }
+    .metric.summary.bad { --status: var(--red); }
 
     table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
     th, td { border-bottom: 1px solid var(--line); padding: 9px; text-align: right; font-size: 13px; vertical-align: middle; }
@@ -252,7 +287,7 @@
     .chart-card h3::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--green)); display: inline-block; }
 
     @media (max-width: 1050px) {
-      .auth, .workspace, .grid, .grid-3, .grid-4, .charts { grid-template-columns: 1fr; }
+      .auth, .workspace, .grid, .grid-3, .grid-4, .charts, .metrics-board { grid-template-columns: 1fr; }
       .entry-grid { grid-template-columns: 1fr 1fr; }
       .hero h1 { font-size: 34px; }
       .brand { font-size: 28px; }
@@ -769,11 +804,15 @@
       const t = totals(log);
       const plan = currentPlanFor(state.currentDate);
       page(`${topbar(`<button class="ghost" onclick="showProfile()">اصلاح پروفایل</button>`)}${steps(5)}
-        <div class="grid-4">
+        <div class="metrics-board">
           ${metric("کالری", t.cal, plan.calories, "kcal")}
           ${metric("پروتئین", t.protein, plan.protein, "g")}
+          ${metric("چربی", t.fat, plan.fat, "g")}
+          ${metric("کربوهیدرات", t.carbs, plan.carbs, "g")}
           ${metric("فیبر", t.fiber, plan.fiber, "g")}
+          ${metric("آب", log.water, plan.waterGlasses, "لیوان")}
           ${metric("قدم", log.steps, plan.steps, "")}
+          ${metric("ورزش", log.exercise, plan.exercise, "دقیقه")}
         </div>
         <div class="workspace" style="margin-top:16px">
           <aside class="card">
@@ -826,8 +865,20 @@
 
     function metric(label, actual, target, unit) {
       const ratio = target ? actual / target : 0;
-      const cls = ratio >= .9 && ratio <= 1.15 ? "good" : ratio >= .65 ? "warn" : "bad";
-      return `<div class="metric ${cls}"><small>${label}</small><b>${f(actual, label === "قدم" ? 0 : 1)} ${unit}</b><span class="tiny">هدف: ${f(target, 0)} ${unit}</span></div>`;
+      const isCalories = label === "کالری";
+      const cls = isCalories
+        ? (ratio > 1.05 ? "bad" : ratio >= .85 ? "good" : "warn")
+        : (ratio >= 1 ? "good" : "warn");
+      const percent = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+      const digits = label === "قدم" || label === "ورزش" || label === "آب" ? 0 : 1;
+      return `<div class="metric summary ${cls}">
+        <div>
+          <small>${label}</small>
+          <b>${f(actual, digits)} ${unit}</b>
+          <span class="tiny">هدف: ${f(target, 0)} ${unit}</span>
+        </div>
+        <div class="metric-ring" style="--p:${percent}%"><span>${percent}</span></div>
+      </div>`;
     }
 
     function tracker(key, label, value, target, unit, step) {
