@@ -262,6 +262,7 @@
 </head>
 <body>
   <main id="root"></main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const foods = [
       [1,"سیب",52,0.3,0.2,14,2.4,86],
@@ -326,31 +327,106 @@
       [60,"قورمه سبزی",151,8,10,7,2.5,72]
     ].map(([id,name,cal,protein,fat,carbs,fiber,water]) => ({ id, name, cal, protein, fat, carbs, fiber, water }));
 
-    const storeKey = "fitCalendarLocalV2";
-    const state = JSON.parse(localStorage.getItem(storeKey) || "{}");
-    state.user ||= null;
-    state.profile ||= null;
-    state.plan ||= null;
-    state.plans ||= [];
-    if (state.plan && !state.plans.length) state.plans.push(state.plan);
-    state.customFoods ||= [];
-    state.foodOverrides ||= {};
-    state.logs ||= {};
-    state.currentDate ||= new Date().toISOString().slice(0, 10);
-    state.chartRange ||= { from: addDays(state.currentDate, -30), to: state.currentDate };
-    Object.values(state.foodOverrides).forEach(food => {
-      const index = foods.findIndex(x => x.id === food.id);
-      if (index >= 0) foods[index] = food;
-    });
-    state.customFoods.forEach(food => {
-      if (!foods.some(x => x.id === food.id)) foods.push(food);
-    });
-
     const root = document.getElementById("root");
-    const save = () => localStorage.setItem(storeKey, JSON.stringify(state));
     const $ = (selector) => document.querySelector(selector);
     const f = (n, d = 0) => Number(n || 0).toLocaleString("fa-IR", { maximumFractionDigits: d, minimumFractionDigits: d });
     const isoToday = () => new Date().toISOString().slice(0, 10);
+    const defaultFoods = foods.map(food => ({ ...food }));
+    const storeKey = "fitCalendarLocalV3";
+    const SUPABASE_URL = "https://sdofiorarcavuhrrfcei.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_XkbTLJ4f657yVcpUzWc_0w_052_OPbm";
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let authUser = null;
+    let state = defaultState();
+    let saveTimer = null;
+
+    function defaultState() {
+      const currentDate = isoToday();
+      return {
+        user: null,
+        profile: null,
+        plan: null,
+        plans: [],
+        customFoods: [],
+        foodOverrides: {},
+        logs: {},
+        currentDate,
+        chartRange: { from: addDays(currentDate, -30), to: currentDate }
+      };
+    }
+
+    function prepareState(data = {}) {
+      const next = { ...defaultState(), ...data };
+      next.profile ||= null;
+      next.plan ||= null;
+      next.plans ||= [];
+      if (next.plan && !next.plans.length) next.plans.push(next.plan);
+      next.customFoods ||= [];
+      next.foodOverrides ||= {};
+      next.logs ||= {};
+      next.currentDate ||= isoToday();
+      next.chartRange ||= { from: addDays(next.currentDate, -30), to: next.currentDate };
+      resetFoods(next);
+      return next;
+    }
+
+    function resetFoods(source = state) {
+      foods.splice(0, foods.length, ...defaultFoods.map(food => ({ ...food })));
+      Object.values(source.foodOverrides || {}).forEach(food => {
+        const index = foods.findIndex(x => x.id === food.id);
+        if (index >= 0) foods[index] = food;
+      });
+      (source.customFoods || []).forEach(food => {
+        if (!foods.some(x => x.id === food.id)) foods.push(food);
+      });
+    }
+
+    function exportState() {
+      return {
+        profile: state.profile,
+        plan: state.plan,
+        plans: state.plans || [],
+        analysis: state.analysis || null,
+        customFoods: state.customFoods || [],
+        foodOverrides: state.foodOverrides || {},
+        logs: state.logs || {},
+        currentDate: state.currentDate || isoToday(),
+        chartRange: state.chartRange || { from: addDays(state.currentDate || isoToday(), -30), to: state.currentDate || isoToday() }
+      };
+    }
+
+    async function loadUserState(user) {
+      authUser = user;
+      const { data, error } = await db
+        .from("fit_calendar_states")
+        .select("data")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+      const localBackup = JSON.parse(localStorage.getItem(`${storeKey}:${user.id}`) || "{}");
+      state = prepareState(data?.data || localBackup || {});
+      state.user = { email: user.email, username: user.user_metadata?.username || user.email?.split("@")[0] };
+      await saveNow();
+    }
+
+    async function saveNow() {
+      if (!authUser) return;
+      state.user = { email: authUser.email, username: state.user?.username || authUser.email?.split("@")[0] };
+      const payload = exportState();
+      localStorage.setItem(`${storeKey}:${authUser.id}`, JSON.stringify(payload));
+      const { error } = await db.from("fit_calendar_states").upsert({
+        user_id: authUser.id,
+        data: payload,
+        updated_at: new Date().toISOString()
+      });
+      if (error) console.error("Save failed", error);
+    }
+
+    function save() {
+      if (!authUser) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveNow, 250);
+    }
 
     function page(shell) {
       root.innerHTML = `<div class="app">${shell}</div>`;
@@ -390,7 +466,7 @@
         </section>
         <section class="card">
           <h2>ورود یا ساخت حساب</h2>
-          <p class="muted">فعلاً نسخه محلی است؛ اطلاعات روی همین مرورگر ذخیره می‌شود.</p>
+          <p class="muted">ثبت‌نام واقعی است؛ اطلاعات هر کاربر خصوصی و جدا در اکانت خودش ذخیره می‌شود.</p>
           <label>ایمیل</label><input id="email" type="email" placeholder="name@example.com">
           <label>یوزرنیم</label><input id="username" placeholder="مثلاً vahid">
           <label>پسورد</label><input id="password" type="password" placeholder="حداقل ۶ کاراکتر">
@@ -403,37 +479,62 @@
       </div>`;
     }
 
-    function signup() {
+    function setAuthMessage(text, ok = false) {
+      const box = $("#authMessage");
+      box.textContent = text;
+      box.className = ok ? "ok" : "notice";
+    }
+
+    async function signup() {
       const email = $("#email").value.trim();
       const username = $("#username").value.trim();
       const password = $("#password").value;
       if (!email.includes("@") || username.length < 2 || password.length < 6) {
-        $("#authMessage").textContent = "ایمیل، یوزرنیم و پسورد حداقل ۶ کاراکتری را کامل وارد کن.";
-        $("#authMessage").classList.remove("hidden");
+        setAuthMessage("ایمیل، یوزرنیم و پسورد حداقل ۶ کاراکتری را کامل وارد کن.");
         return;
       }
-      state.user = { email, username };
-      save();
-      showProfile();
+      setAuthMessage("در حال ساخت حساب...", true);
+      const { data, error } = await db.auth.signUp({
+        email,
+        password,
+        options: { data: { username }, emailRedirectTo: location.origin }
+      });
+      if (error) {
+        setAuthMessage(error.message);
+        return;
+      }
+      if (data.session?.user) {
+        await loadUserState(data.session.user);
+        showProfile();
+      } else {
+        setAuthMessage("حساب ساخته شد. اگر Supabase تایید ایمیل را فعال کرده باشد، ایمیلت را تایید کن و بعد وارد شو.", true);
+      }
     }
 
-    function login() {
+    async function login() {
       const email = $("#email").value.trim();
-      if (!email.includes("@")) {
-        $("#authMessage").textContent = "برای ورود ایمیل را وارد کن. در نسخه محلی پسورد فقط برای شبیه‌سازی فرم است.";
-        $("#authMessage").classList.remove("hidden");
+      const password = $("#password").value;
+      if (!email.includes("@") || password.length < 6) {
+        setAuthMessage("برای ورود ایمیل و پسورد را وارد کن.");
         return;
       }
-      state.user = { email, username: $("#username").value.trim() || email.split("@")[0] };
-      save();
+      setAuthMessage("در حال ورود...", true);
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+      if (error) {
+        setAuthMessage("ورود ناموفق بود. ایمیل/پسورد یا تایید ایمیل را چک کن.");
+        return;
+      }
+      await loadUserState(data.user);
       if (!state.profile) showProfile();
       else if (!currentPlanFor(state.currentDate)) showReport();
       else showApp();
     }
 
-    function logout() {
-      state.user = null;
-      save();
+    async function logout() {
+      await saveNow();
+      await db.auth.signOut();
+      authUser = null;
+      state = defaultState();
       showAuth();
     }
 
@@ -1098,10 +1199,36 @@
       showApp();
     }
 
-    if (!state.user) showAuth();
-    else if (!state.profile) showProfile();
-    else if (!currentPlanFor(state.currentDate)) showReport();
-    else showApp();
+    function showLoading() {
+      root.innerHTML = `<div class="app"><section class="card" style="max-width:720px;margin:10vh auto"><h2>در حال آماده‌سازی حساب...</h2><p class="muted">چند لحظه صبر کن.</p></section></div>`;
+    }
+
+    async function routeAfterAuth() {
+      if (!state.profile) showProfile();
+      else if (!currentPlanFor(state.currentDate)) showReport();
+      else showApp();
+    }
+
+    async function boot() {
+      showLoading();
+      const { data } = await db.auth.getSession();
+      if (data.session?.user) {
+        try {
+          await loadUserState(data.session.user);
+          routeAfterAuth();
+        } catch (error) {
+          console.error(error);
+          state = defaultState();
+          showAuth();
+          setAuthMessage("اتصال به دیتابیس برقرار نشد. چند لحظه بعد دوباره تلاش کن.");
+        }
+      } else {
+        state = defaultState();
+        showAuth();
+      }
+    }
+
+    boot();
   </script>
 </body>
 </html>
