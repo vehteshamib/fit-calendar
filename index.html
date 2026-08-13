@@ -214,6 +214,17 @@
     .food-tabs { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
     .food-tabs button { padding: 8px 10px; font-size: 12px; background: #edf3ec; color: var(--ink); box-shadow: none; }
     .food-tabs button.active { background: var(--green); color: white; }
+    .recipe-builder { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 14px; align-items: start; }
+    .ingredient-list { display: grid; gap: 8px; max-height: 430px; overflow: auto; padding-left: 4px; }
+    .ingredient-card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff, #fbfdf8);
+      border-radius: 8px;
+      padding: 9px;
+      cursor: grab;
+    }
+    .ingredient-card b { display: block; color: #164e63; }
+    .ingredient-card small { color: var(--muted); line-height: 1.7; }
     .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
     svg { width: 100%; height: 240px; background: linear-gradient(180deg, #ffffff, #fbfcf8); border: 1px solid var(--line); border-radius: 8px; }
     .axis { stroke: #d6ddd2; stroke-dasharray: 3 3; }
@@ -307,7 +318,7 @@
     .chart-card h3::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--green)); display: inline-block; }
 
     @media (max-width: 1050px) {
-      .auth, .workspace, .grid, .grid-3, .grid-4, .charts, .metrics-board, .chart-tools { grid-template-columns: 1fr; }
+      .auth, .workspace, .grid, .grid-3, .grid-4, .charts, .metrics-board, .chart-tools, .recipe-builder { grid-template-columns: 1fr; }
       .entry-grid { grid-template-columns: 1fr 1fr; }
       .hero h1 { font-size: 34px; }
       .brand { font-size: 28px; }
@@ -538,6 +549,100 @@
       [72,"زردچوبه",8,0.2,0.2,1.4,0.5,0,"۱ قاشق چای‌خوری","spice"],
       [73,"فلفل سیاه",6,0.2,0.1,1.5,0.6,0,"۱ قاشق چای‌خوری","spice"]
     ].map(([id,name,cal,protein,fat,carbs,fiber,water,unit,category]) => ({ id, name, cal, protein, fat, carbs, fiber, water, unit, category }));
+    rawIngredients.push(...[
+      [74,"گوشت بوقلمون خام",135,29,1.5,0,0,70,"۱۰۰ گرم","protein"],
+      [75,"گوشت اردک خام",337,19,28,0,0,51,"۱۰۰ گرم","protein"],
+      [76,"دل مرغ خام",153,16,9,1,0,73,"۱۰۰ گرم","protein"],
+      [77,"جگر مرغ خام",119,17,4.8,0.7,0,76,"۱۰۰ گرم","protein"],
+      [78,"جگر گوساله خام",135,20,3.6,3.9,0,72,"۱۰۰ گرم","protein"],
+      [79,"ماهی تن خام",144,23,4.9,0,0,68,"۱۰۰ گرم","protein"],
+      [80,"ماهی قزل‌آلا خام",190,20,11,0,0,66,"۱۰۰ گرم","protein"],
+      [81,"ساردین خام",208,25,11,0,0,60,"۱۰۰ گرم","protein"],
+      [82,"کنسرو تن در آب",116,26,1,0,0,72,"۱۰۰ گرم","protein"],
+      [83,"کنسرو تن در روغن",198,29,8.2,0,0,60,"۱۰۰ گرم","protein"],
+      [84,"سوسیس معمولی",301,12,27,2,0,56,"۱۰۰ گرم","protein"],
+      [85,"کالباس مرغ",180,14,12,4,0,63,"۱۰۰ گرم","protein"],
+      [86,"برنج باسماتی خام",350,8,0.6,77,1.2,12,"۱۰۰ گرم","grain"],
+      [87,"برنج نیم‌دانه خام",360,7,0.6,79,1,12,"۱۰۰ گرم","grain"],
+      [88,"کینوا خشک",368,14,6.1,64,7,13,"۱۰۰ گرم","grain"],
+      [89,"چاودار خشک",338,10,1.6,76,15,11,"۱۰۰ گرم","grain"],
+      [90,"آرد برنج",366,6,1.4,80,2.4,11,"۱۰۰ گرم","grain"],
+      [91,"آرد نخودچی",387,22,6.7,58,10,10,"۱۰۰ گرم","grain"],
+      [92,"آرد ذرت",361,6.9,3.9,77,7.3,10,"۱۰۰ گرم","grain"],
+      [93,"نشاسته ذرت",381,0.3,0.1,91,0.9,8,"۱۰۰ گرم","grain"],
+      [94,"نان خشک خردشده",395,12,5,72,5,8,"۱۰۰ گرم","grain"],
+      [95,"خمیر یوفکا",299,8,6,52,2,32,"۱۰۰ گرم","grain"],
+      [96,"نودل خشک",380,10,14,54,2,8,"۱۰۰ گرم","grain"],
+      [97,"لوبیا سفید خشک",333,23,0.8,60,15,11,"۱۰۰ گرم","legume"],
+      [98,"لوبیا چشم‌بلبلی خشک",336,24,1.3,60,11,11,"۱۰۰ گرم","legume"],
+      [99,"باقلا خشک",341,26,1.5,58,25,11,"۱۰۰ گرم","legume"],
+      [100,"نخودفرنگی خشک",341,25,1.2,60,26,10,"۱۰۰ گرم","legume"],
+      [101,"کنسرو لوبیا",94,5.5,0.5,17,5,75,"۱۰۰ گرم","legume"],
+      [102,"کنسرو ذرت",96,3.4,1.5,21,2.4,73,"۱۰۰ گرم","grain"],
+      [103,"روغن کنجد",120,0,13.6,0,0,0,"۱ قاشق غذاخوری","fat"],
+      [104,"روغن کانولا",124,0,14,0,0,0,"۱ قاشق غذاخوری","fat"],
+      [105,"روغن حیوانی",112,0,12.7,0,0,0,"۱ قاشق غذاخوری","fat"],
+      [106,"ارده",89,2.6,8,3.2,1.4,0,"۱ قاشق غذاخوری","fat"],
+      [107,"کره بادام‌زمینی",94,4,8,3.2,1,0,"۱ قاشق غذاخوری","fat"],
+      [108,"بادام زمینی",170,7.3,14,4.6,2.4,2,"۳۰ گرم","fat"],
+      [109,"پسته",169,6,13.5,8.4,3,1,"۳۰ گرم","fat"],
+      [110,"فندق",188,4.5,18.3,5.1,2.9,1,"۳۰ گرم","fat"],
+      [111,"تخمه آفتابگردان",175,6.2,15.5,6,2.6,1,"۳۰ گرم","fat"],
+      [112,"تخم کتان",53,1.8,4.2,2.9,2.7,1,"۱ قاشق غذاخوری","fat"],
+      [113,"دانه چیا",58,2,3.7,5,4.1,1,"۱ قاشق غذاخوری","fat"],
+      [114,"کنجد",52,1.6,4.5,2.1,1.1,0,"۱ قاشق غذاخوری","fat"],
+      [115,"شیر پرچرب",122,6.4,6.6,9.6,0,176,"۱ لیوان","dairy"],
+      [116,"شیر بدون لاکتوز کم‌چرب",84,6.8,2,10,0,180,"۱ لیوان","dairy"],
+      [117,"شیر سویا",80,7,4,4,1,180,"۱ لیوان","dairy"],
+      [118,"شیر بادام بدون شکر",30,1,2.5,1,0.5,190,"۱ لیوان","dairy"],
+      [119,"پنیر خامه‌ای",342,6,34,4,0,54,"۱۰۰ گرم","dairy"],
+      [120,"کشک مایع",80,8,2,7,0,78,"۱۰۰ گرم","dairy"],
+      [121,"خامه صبحانه",340,2.1,36,2.8,0,58,"۱۰۰ گرم","dairy"],
+      [122,"دوغ کم‌نمک",54,3.2,2,4.8,0,188,"۱ لیوان","dairy"],
+      [123,"کلم بروکلی خام",34,2.8,0.4,6.6,2.6,89,"۱۰۰ گرم","vegetable"],
+      [124,"گل‌کلم خام",25,1.9,0.3,5,2,92,"۱۰۰ گرم","vegetable"],
+      [125,"کرفس خام",16,0.7,0.2,3,1.6,95,"۱۰۰ گرم","vegetable"],
+      [126,"چغندر خام",43,1.6,0.2,10,2.8,88,"۱۰۰ گرم","vegetable"],
+      [127,"شلغم خام",28,0.9,0.1,6.4,1.8,92,"۱۰۰ گرم","vegetable"],
+      [128,"لوبیا سبز خام",31,1.8,0.2,7,3.4,90,"۱۰۰ گرم","vegetable"],
+      [129,"بامیه خام",33,1.9,0.2,7.5,3.2,90,"۱۰۰ گرم","vegetable"],
+      [130,"نخودفرنگی سبز",81,5.4,0.4,14.5,5.1,79,"۱۰۰ گرم","vegetable"],
+      [131,"کلم قرمز",31,1.4,0.2,7.4,2.1,91,"۱۰۰ گرم","vegetable"],
+      [132,"تره",61,1.5,0.3,14,1.8,83,"۱۰۰ گرم","vegetable"],
+      [133,"گشنیز تازه",23,2.1,0.5,3.7,2.8,92,"۱۰۰ گرم","vegetable"],
+      [134,"شوید تازه",43,3.5,1.1,7,2.1,86,"۱۰۰ گرم","vegetable"],
+      [135,"ریحان تازه",23,3.2,0.6,2.7,1.6,92,"۱۰۰ گرم","vegetable"],
+      [136,"کدو حلوایی خام",26,1,0.1,6.5,0.5,92,"۱۰۰ گرم","vegetable"],
+      [137,"لیمو عمانی",20,0.4,0.1,5,1.8,5,"۱ عدد","spice"],
+      [138,"دارچین",6,0.1,0,2.1,1.4,0,"۱ قاشق چای‌خوری","spice"],
+      [139,"زنجبیل تازه",80,1.8,0.8,18,2,79,"۱۰۰ گرم","spice"],
+      [140,"زعفران دم‌کرده",2,0,0,0.4,0,15,"۱ قاشق غذاخوری","spice"],
+      [141,"آبلیمو",4,0.1,0,1.3,0,14,"۱ قاشق غذاخوری","spice"],
+      [142,"سرکه",3,0,0,0.1,0,14,"۱ قاشق غذاخوری","spice"],
+      [143,"سس سویا",9,1.3,0,0.8,0.1,13,"۱ قاشق غذاخوری","spice"],
+      [144,"شکلات تلخ",164,1.5,9.3,18.3,2.1,0,"۳۰ گرم","sweet"],
+      [145,"خرما",23,0.2,0,6,0.6,2,"۱ عدد","sweet"],
+      [146,"آلو خشک",20,0.2,0,5.4,0.6,2,"۱ عدد","sweet"],
+      [147,"کشمش",90,0.9,0.2,23.7,1.1,5,"۳۰ گرم","sweet"],
+      [148,"رب انار",45,0.2,0,11,0.2,5,"۱ قاشق غذاخوری","sweet"],
+      [149,"آب",0,0,0,0,0,200,"۱ لیوان","drink"],
+      [150,"آب مرغ یا گوشت",15,2,0.5,1,0,95,"۱۰۰ گرم","drink"]
+    ].map(([id,name,cal,protein,fat,carbs,fiber,water,unit,category]) => ({ id, name, cal, protein, fat, carbs, fiber, water, unit, category })));
+    const defaultIngredients = rawIngredients.map(item => ({ ...item }));
+    const ingredientCategories = [
+      ["all", "همه"],
+      ["protein", "گوشت، مرغ، ماهی و تخم‌مرغ"],
+      ["grain", "غلات، آرد و نشاسته"],
+      ["legume", "حبوبات"],
+      ["fat", "روغن، مغزها و چربی‌ها"],
+      ["dairy", "لبنیات"],
+      ["vegetable", "سبزیجات و صیفی‌جات"],
+      ["fruit", "میوه و خشکبار"],
+      ["sweet", "شیرین‌کننده و تنقلات"],
+      ["spice", "چاشنی و ادویه"],
+      ["drink", "مایعات"],
+      ["custom", "مواد اولیه من"]
+    ];
     const foodCategories = [
       ["all", "همه"],
       ["fruit", "میوه"],
@@ -570,6 +675,9 @@
         customFoods: [],
         foodOverrides: {},
         foodTab: "all",
+        customIngredients: [],
+        ingredientOverrides: {},
+        ingredientTab: "all",
         visibleCharts: defaultChartKeys(),
         logs: {},
         currentDate,
@@ -586,11 +694,15 @@
       next.customFoods ||= [];
       next.foodOverrides ||= {};
       next.foodTab ||= "all";
+      next.customIngredients ||= [];
+      next.ingredientOverrides ||= {};
+      next.ingredientTab ||= "all";
       next.visibleCharts ||= defaultChartKeys();
       next.logs ||= {};
       next.currentDate ||= isoToday();
       next.chartRange ||= { from: addDays(next.currentDate, -30), to: next.currentDate };
       resetFoods(next);
+      resetIngredients(next);
       return next;
     }
 
@@ -611,6 +723,23 @@
       return { ...food, unit: food?.unit || "۱۰۰ گرم", category: food?.category || inferFoodCategory(food?.id || 0, food?.name || "") };
     }
 
+    function resetIngredients(source = state) {
+      rawIngredients.splice(0, rawIngredients.length, ...defaultIngredients.map(item => ({ ...item })));
+      Object.values(source.ingredientOverrides || {}).forEach(item => {
+        item = normalizeIngredient(item);
+        const index = rawIngredients.findIndex(x => x.id === item.id);
+        if (index >= 0) rawIngredients[index] = item;
+      });
+      (source.customIngredients || []).forEach(item => {
+        item = normalizeIngredient(item);
+        if (!rawIngredients.some(x => x.id === item.id)) rawIngredients.push(item);
+      });
+    }
+
+    function normalizeIngredient(item) {
+      return { ...item, unit: item?.unit || "۱۰۰ گرم", category: item?.category || "protein" };
+    }
+
     function exportState() {
       return {
         profile: state.profile,
@@ -620,6 +749,9 @@
         customFoods: state.customFoods || [],
         foodOverrides: state.foodOverrides || {},
         foodTab: state.foodTab || "all",
+        customIngredients: state.customIngredients || [],
+        ingredientOverrides: state.ingredientOverrides || {},
+        ingredientTab: state.ingredientTab || "all",
         visibleCharts: state.visibleCharts || defaultChartKeys(),
         logs: state.logs || {},
         currentDate: state.currentDate || isoToday(),
@@ -1626,13 +1758,35 @@
       showApp();
     }
 
-    function ingredientOptions(selectedId = "") {
-      return rawIngredients.map(item => `<option value="${item.id}" ${Number(selectedId) === item.id ? "selected" : ""}>${item.name} | ${item.unit}</option>`).join("");
+    function isCustomIngredient(id) {
+      return state.customIngredients.some(item => item.id === id);
     }
 
-    function recipeRowHtml(ingredientId = "", amount = 1) {
-      return `<div class="recipe-row">
-        <div><label>مواد اولیه</label><select class="recipeIngredient" onchange="updateRecipePreview()">${ingredientOptions(ingredientId)}</select></div>
+    function ingredientCategoryLabel(key) {
+      return ingredientCategories.find(([id]) => id === key)?.[1] || "مواد اولیه";
+    }
+
+    function ingredientTabs() {
+      const active = state.ingredientTab || "all";
+      return ingredientCategories.map(([key, label]) => `<button class="${active === key ? "active" : ""}" onclick="setIngredientTab('${key}')">${label}</button>`).join("");
+    }
+
+    function setIngredientTab(key) {
+      state.ingredientTab = key;
+      save();
+      const tabs = $("#ingredientTabs");
+      if (tabs) tabs.innerHTML = ingredientTabs();
+      renderIngredients();
+    }
+
+    function recipeRowHtml(ingredientId, amount = 1) {
+      const item = rawIngredients.find(x => x.id === ingredientId);
+      if (!item) return "";
+      return `<div class="recipe-row" data-ingredient-id="${item.id}">
+        <div>
+          <b>${esc(item.name)}</b>
+          <small class="tiny">واحد: ${esc(item.unit)} | ${item.cal} kcal | پروتئین ${item.protein}g | فیبر ${item.fiber}g</small>
+        </div>
         <div><label>تعداد واحد</label><input class="recipeAmount" type="number" min="0" step="0.1" value="${amount}" oninput="updateRecipePreview()"></div>
         <button class="danger" onclick="removeRecipeRow(this)">×</button>
       </div>`;
@@ -1642,27 +1796,43 @@
       document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="recipeModal">
         <div class="modal wide">
           <h2>آشپزی و ساخت غذای جدید</h2>
-          <p class="muted">مواد اولیه خام را انتخاب کن، مقدار هرکدام را بزن، بعد بگو کل غذا در پایان چند واحد شد. برنامه ارزش غذایی هر واحد غذای نهایی را حساب می‌کند و به غذاهای من اضافه می‌کند.</p>
+          <p class="muted">مواد اولیه را از پنل انتخاب کن یا بکش داخل دستور پخت. بعد مقدار هر ماده و تعداد واحد خروجی غذا را وارد کن تا ارزش غذایی هر واحد محاسبه شود.</p>
           <div class="grid-3">
             <div><label>نام غذای پخته‌شده</label><input id="recipeFoodName" placeholder="مثلاً قورمه سبزی خانگی"></div>
             <div><label>واحد غذای نهایی</label><select id="recipeFoodUnit" onchange="updateRecipePreview()">${unitOptions("۱ پرس")}</select></div>
             <div><label>واحد دلخواه</label><input id="recipeCustomUnit" placeholder="مثلاً ۱ کاسه بزرگ" oninput="updateRecipePreview()"></div>
             <div><label>کل غذا چند واحد شد؟</label><input id="recipeYield" type="number" min="0.1" step="0.1" value="4" oninput="updateRecipePreview()"></div>
           </div>
-          <h3 style="margin-top:16px">مواد اولیه</h3>
-          <div id="recipeRows">
-            ${recipeRowHtml(1, 3)}
-            ${recipeRowHtml(14, 2)}
-            ${recipeRowHtml(33, 1)}
+          <div class="recipe-builder" style="margin-top:16px">
+            <aside class="flat card">
+              <h3>مواد اولیه</h3>
+              <label>جستجو</label><input id="ingredientSearch" oninput="renderIngredients()" placeholder="مثلاً مرغ خام، برنج، روغن">
+              <div class="food-buttons">
+                <button class="secondary" onclick="openIngredientModal()">افزودن ماده خام</button>
+                <button class="ghost" onclick="renderIngredients()">به‌روزرسانی</button>
+              </div>
+              <div id="ingredientTabs" class="food-tabs">${ingredientTabs()}</div>
+              <div id="ingredientList" class="ingredient-list" style="margin-top:12px"></div>
+            </aside>
+            <section>
+              <h3>دستور پخت</h3>
+              <div id="recipeDropzone" class="dropzone">ماده اولیه را اینجا رها کن یا از پنل کلیک کن</div>
+              <div id="recipeRows">
+                ${recipeRowHtml(1, 3)}
+                ${recipeRowHtml(14, 2)}
+                ${recipeRowHtml(33, 1)}
+              </div>
+              <div id="recipeSummary" class="recipe-summary"></div>
+            </section>
           </div>
-          <button class="secondary" onclick="addRecipeRow()">افزودن ماده اولیه</button>
-          <div id="recipeSummary" class="recipe-summary"></div>
           <div class="grid" style="margin-top:14px">
             <button onclick="saveRecipeFood()">ذخیره به غذاهای من</button>
             <button class="secondary" onclick="closeRecipeModal()">انصراف</button>
           </div>
         </div>
       </div>`);
+      renderIngredients();
+      setupRecipeDropzone();
       updateRecipePreview();
       $("#recipeFoodName").focus();
     }
@@ -1671,8 +1841,49 @@
       $("#recipeModal")?.remove();
     }
 
-    function addRecipeRow() {
-      $("#recipeRows").insertAdjacentHTML("beforeend", recipeRowHtml(rawIngredients[0]?.id || "", 1));
+    function renderIngredients() {
+      const listBox = $("#ingredientList");
+      if (!listBox) return;
+      const q = ($("#ingredientSearch")?.value || "").trim();
+      const active = state.ingredientTab || "all";
+      const list = rawIngredients.filter(item => {
+        const matchesSearch = !q || item.name.includes(q) || String(item.id) === q;
+        const matchesTab = active === "all" || (active === "custom" ? isCustomIngredient(item.id) : item.category === active);
+        return matchesSearch && matchesTab;
+      }).slice(0, 180);
+      if (!list.length) {
+        listBox.innerHTML = `<div class="notice">در این دسته ماده اولیه‌ای پیدا نشد.</div>`;
+        return;
+      }
+      listBox.innerHTML = list.map(item => `<div class="ingredient-card" draggable="true" ondragstart="dragIngredient(event, ${item.id})" onclick="addIngredientToRecipe(${item.id})">
+        <b>${item.id}. ${esc(item.name)}</b>
+        <small>${ingredientCategoryLabel(item.category)} | واحد: ${esc(item.unit)} | ${item.cal} kcal | پروتئین ${item.protein}g</small>
+        <div class="food-actions">
+          <button class="ghost" onclick="event.stopPropagation(); openIngredientModal(${item.id})">ویرایش</button>
+          ${isCustomIngredient(item.id) ? `<button class="danger" onclick="event.stopPropagation(); deleteIngredient(${item.id})">حذف</button>` : ""}
+        </div>
+      </div>`).join("");
+    }
+
+    function dragIngredient(event, id) {
+      event.dataTransfer.setData("ingredientId", String(id));
+    }
+
+    function setupRecipeDropzone() {
+      const z = $("#recipeDropzone");
+      if (!z) return;
+      z.ondragover = (event) => { event.preventDefault(); z.classList.add("hot"); };
+      z.ondragleave = () => z.classList.remove("hot");
+      z.ondrop = (event) => {
+        event.preventDefault();
+        z.classList.remove("hot");
+        addIngredientToRecipe(Number(event.dataTransfer.getData("ingredientId")));
+      };
+    }
+
+    function addIngredientToRecipe(ingredientId) {
+      if (!rawIngredients.find(item => item.id === ingredientId)) return;
+      $("#recipeRows").insertAdjacentHTML("beforeend", recipeRowHtml(ingredientId, 1));
       updateRecipePreview();
     }
 
@@ -1686,7 +1897,7 @@
       const total = { cal: 0, protein: 0, fat: 0, carbs: 0, fiber: 0, water: 0 };
       const items = [];
       rows.forEach(row => {
-        const ingredientId = Number(row.querySelector(".recipeIngredient")?.value || 0);
+        const ingredientId = Number(row.dataset.ingredientId || 0);
         const amount = Number(row.querySelector(".recipeAmount")?.value || 0);
         const ingredient = rawIngredients.find(item => item.id === ingredientId);
         if (!ingredient || amount <= 0) return;
@@ -1751,6 +1962,84 @@
       save();
       closeRecipeModal();
       showApp();
+    }
+
+    function openIngredientModal(ingredientId = null) {
+      const item = ingredientId ? rawIngredients.find(x => x.id === ingredientId) : null;
+      document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="ingredientModal">
+        <div class="modal">
+          <h2>${item ? "ویرایش ماده اولیه" : "افزودن ماده اولیه جدید"}</h2>
+          <p class="muted">${item ? "این تغییر فقط برای حساب خودت ذخیره می‌شود." : "واحد ماده را انتخاب کن و مقدارها را برای همان واحد وارد کن."}</p>
+          <input id="editingIngredientId" type="hidden" value="${item?.id || ""}">
+          <div class="grid-3">
+            <div><label>نام ماده اولیه</label><input id="newIngredientName" value="${esc(item?.name || "")}"></div>
+            <div><label>دسته</label><select id="newIngredientCategory">
+              ${ingredientCategories.filter(([key]) => key !== "all" && key !== "custom").map(([key, label]) => `<option value="${key}" ${((item?.category || "protein") === key) ? "selected" : ""}>${label}</option>`).join("")}
+            </select></div>
+            <div><label>واحد</label><select id="newIngredientUnit">${unitOptions(item?.unit || "۱۰۰ گرم")}</select></div>
+            <div><label>واحد دلخواه</label><input id="newIngredientCustomUnit" placeholder="مثلاً ۳۰ گرم" value="${isKnownUnit(item?.unit) ? "" : esc(item?.unit || "")}"></div>
+            <div><label>کالری در هر واحد</label><input id="newIngredientCal" type="number" value="${item?.cal || ""}"></div>
+            <div><label>پروتئین در هر واحد (g)</label><input id="newIngredientProtein" type="number" step="0.1" value="${item?.protein || ""}"></div>
+            <div><label>چربی در هر واحد (g)</label><input id="newIngredientFat" type="number" step="0.1" value="${item?.fat || ""}"></div>
+            <div><label>کربوهیدرات در هر واحد (g)</label><input id="newIngredientCarbs" type="number" step="0.1" value="${item?.carbs || ""}"></div>
+            <div><label>فیبر در هر واحد (g)</label><input id="newIngredientFiber" type="number" step="0.1" value="${item?.fiber || ""}"></div>
+            <div><label>آب در هر واحد (g/ml)</label><input id="newIngredientWater" type="number" step="0.1" value="${item?.water || ""}"></div>
+          </div>
+          <div class="grid" style="margin-top:14px">
+            <button onclick="saveIngredient()">${item ? "ذخیره تغییرات" : "افزودن ماده اولیه"}</button>
+            <button class="secondary" onclick="closeIngredientModal()">انصراف</button>
+          </div>
+        </div>
+      </div>`);
+      $("#newIngredientName").focus();
+    }
+
+    function closeIngredientModal() {
+      $("#ingredientModal")?.remove();
+    }
+
+    function saveIngredient() {
+      const editingId = Number($("#editingIngredientId").value || 0);
+      const name = $("#newIngredientName").value.trim();
+      if (!name) return;
+      const id = editingId || Math.max(0, ...rawIngredients.map(item => item.id)) + 1;
+      const item = {
+        id,
+        name,
+        cal: Number($("#newIngredientCal").value || 0),
+        protein: Number($("#newIngredientProtein").value || 0),
+        fat: Number($("#newIngredientFat").value || 0),
+        carbs: Number($("#newIngredientCarbs").value || 0),
+        fiber: Number($("#newIngredientFiber").value || 0),
+        water: Number($("#newIngredientWater").value || 0),
+        unit: $("#newIngredientCustomUnit").value.trim() || $("#newIngredientUnit").value || "۱۰۰ گرم",
+        category: $("#newIngredientCategory").value || "protein"
+      };
+      const existingIndex = rawIngredients.findIndex(x => x.id === id);
+      if (existingIndex >= 0) rawIngredients[existingIndex] = item;
+      else rawIngredients.push(item);
+      if (isCustomIngredient(id) || !editingId) {
+        const customIndex = state.customIngredients.findIndex(x => x.id === id);
+        if (customIndex >= 0) state.customIngredients[customIndex] = item;
+        else state.customIngredients.push(item);
+      } else {
+        state.ingredientOverrides[id] = item;
+      }
+      save();
+      closeIngredientModal();
+      renderIngredients();
+      updateRecipePreview();
+    }
+
+    function deleteIngredient(id) {
+      if (!isCustomIngredient(id)) return;
+      if (!confirm("این ماده اولیه حذف شود؟ دستور پخت‌های قبلی که از آن استفاده کرده‌اند، اسم و واحد ذخیره‌شده خودشان را نگه می‌دارند.")) return;
+      const index = rawIngredients.findIndex(item => item.id === id);
+      if (index >= 0) rawIngredients.splice(index, 1);
+      state.customIngredients = state.customIngredients.filter(item => item.id !== id);
+      save();
+      renderIngredients();
+      updateRecipePreview();
     }
 
     function showLoading() {
