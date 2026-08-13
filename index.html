@@ -433,7 +433,22 @@
       [118,"بیسکویت ساده",480,7,20,65,2,3,"sweet"],
       [119,"نوشابه",42,0,0,10.6,0,89,"drink"],
       [120,"آب پرتقال",45,0.7,0.2,10.4,0.2,88,"drink"]
-    ].map(([id,name,cal,protein,fat,carbs,fiber,water,category]) => ({ id, name, cal, protein, fat, carbs, fiber, water, category: category || inferFoodCategory(id, name) }));
+    ].map(([id,name,cal,protein,fat,carbs,fiber,water,category]) => {
+      const serving = inferFoodServing(id, name, category);
+      const factor = serving.factor || 1;
+      return {
+        id,
+        name,
+        cal: roundFoodValue(cal * factor),
+        protein: roundFoodValue(protein * factor),
+        fat: roundFoodValue(fat * factor),
+        carbs: roundFoodValue(carbs * factor),
+        fiber: roundFoodValue(fiber * factor),
+        water: roundFoodValue(water * factor),
+        unit: serving.unit,
+        category: category || inferFoodCategory(id, name)
+      };
+    });
 
     const root = document.getElementById("root");
     const $ = (selector) => document.querySelector(selector);
@@ -499,12 +514,18 @@
     function resetFoods(source = state) {
       foods.splice(0, foods.length, ...defaultFoods.map(food => ({ ...food })));
       Object.values(source.foodOverrides || {}).forEach(food => {
+        food = normalizeFood(food);
         const index = foods.findIndex(x => x.id === food.id);
         if (index >= 0) foods[index] = food;
       });
       (source.customFoods || []).forEach(food => {
+        food = normalizeFood(food);
         if (!foods.some(x => x.id === food.id)) foods.push(food);
       });
+    }
+
+    function normalizeFood(food) {
+      return { ...food, unit: food?.unit || "۱۰۰ گرم", category: food?.category || inferFoodCategory(food?.id || 0, food?.name || "") };
     }
 
     function exportState() {
@@ -911,7 +932,7 @@
             <div class="card">
               <div class="grid">
                 <div><label>تاریخ</label><input id="datePicker" type="date" value="${state.currentDate}" onchange="changeDate(this.value)"></div>
-                <div><label>واحد پیش‌فرض هر غذا</label><input id="defaultUnits" type="number" step="0.1" value="1"></div>
+                <div><label>تعداد پیش‌فرض از واحد غذا</label><input id="defaultUnits" type="number" step="0.1" value="1"></div>
               </div>
               ${dateStrip()}
               <div id="dropzone" class="dropzone">غذا را اینجا رها کن یا از دیتابیس کلیک کن</div>
@@ -1055,8 +1076,83 @@
       return "meal";
     }
 
+    function roundFoodValue(value) {
+      return Math.round(Number(value || 0) * 10) / 10;
+    }
+
+    function inferFoodServing(id, name, category) {
+      const byId = {
+        1: ["۱ عدد متوسط", 1.82],
+        2: ["۱ عدد متوسط", 1.18],
+        3: ["۱ عدد متوسط", 1.31],
+        4: ["۱ پیمانه", 1.52],
+        5: ["۱ برش متوسط", 2.8],
+        6: ["۱ عدد", 0.08],
+        19: ["۱ عدد", 0.5],
+        20: ["سفیده ۱ تخم‌مرغ", 0.33],
+        23: ["۱ لیوان", 2],
+        32: ["۱ قاشق غذاخوری", 0.135],
+        42: ["۱ لیوان", 2],
+        43: ["۱ قاشق غذاخوری", 0.21],
+        51: ["۱ اسکوپ", 0.3],
+        61: ["۱ پیمانه", 1.51],
+        62: ["۱ عدد", 0.75],
+        63: ["۱ عدد متوسط", 1.78],
+        64: ["۱ عدد متوسط", 1.5],
+        65: ["۱ عدد", 0.35],
+        66: ["۱ عدد متوسط", 2.82],
+        67: ["۱ پیمانه", 1.6],
+        68: ["۱ پیمانه", 1.65],
+        69: ["۱ پیمانه", 1.48],
+        83: ["۱ لیوان", 2],
+        86: ["۱ لیوان", 2],
+        99: ["۱ قاشق غذاخوری", 0.1],
+        100: ["۱ قاشق غذاخوری", 0.12],
+        101: ["۱ قاشق غذاخوری", 0.09],
+        102: ["۱ قاشق غذاخوری", 0.14],
+        103: ["۱ عدد", 1.2],
+        104: ["۱ کاسه", 2.5],
+        105: ["۱ کاسه", 2],
+        106: ["۱ کاسه", 2],
+        107: ["۱ پرس", 3.5],
+        108: ["۱ پرس", 3.5],
+        109: ["۱ کاسه", 3],
+        110: ["۱ کاسه", 2.5],
+        111: ["۱ کاسه", 2],
+        112: ["۱ عدد", 1.8],
+        113: ["۱ بشقاب", 2.5],
+        114: ["۱ برش", 2],
+        116: ["۱ پیمانه", 1.32],
+        117: ["۱ برش", 0.8],
+        118: ["۱ عدد", 0.12],
+        119: ["۱ لیوان", 2],
+        120: ["۱ لیوان", 2]
+      };
+      if (byId[id]) return { unit: byId[id][0], factor: byId[id][1] };
+      if (category === "drink") return { unit: "۱ لیوان", factor: 2 };
+      if (category === "meal") return { unit: "۱ پرس", factor: 3 };
+      return { unit: "۱۰۰ گرم", factor: 1 };
+    }
+
     function getFoodCategory(food) {
       return food.category || inferFoodCategory(food.id, food.name);
+    }
+
+    function foodUnit(food) {
+      return food?.unit || "۱۰۰ گرم";
+    }
+
+    function knownUnits() {
+      return ["۱۰۰ گرم", "۱ عدد", "۱ عدد متوسط", "۱ لیوان", "۱ پیمانه", "۱ قاشق غذاخوری", "۱ قاشق چای‌خوری", "۱ کاسه", "۱ بشقاب", "۱ پرس", "۱ برش", "۱ کفگیر", "۱ اسکوپ"];
+    }
+
+    function isKnownUnit(unit) {
+      return knownUnits().includes(unit || "۱۰۰ گرم");
+    }
+
+    function unitOptions(selected) {
+      const active = isKnownUnit(selected) ? selected : "۱۰۰ گرم";
+      return knownUnits().map(unit => `<option value="${unit}" ${unit === active ? "selected" : ""}>${unit}</option>`).join("");
     }
 
     function foodTabs() {
@@ -1086,7 +1182,7 @@
       }
       $("#foodList").innerHTML = list.map(food => `<div class="food-card" draggable="true" ondragstart="dragFood(event, ${food.id})" onclick="addFood(${food.id})">
         <b>${food.id}. ${esc(food.name)}</b>
-        <small>${categoryLabel(getFoodCategory(food))} | ${food.cal} kcal | پروتئین ${food.protein}g | فیبر ${food.fiber}g در ۱۰۰ گرم</small>
+        <small>${categoryLabel(getFoodCategory(food))} | واحد: ${foodUnit(food)} | ${food.cal} kcal | پروتئین ${food.protein}g | فیبر ${food.fiber}g</small>
         <div class="food-actions">
           <button class="ghost" onclick="event.stopPropagation(); openFoodModal(${food.id})">ویرایش</button>
           ${isCustomFood(food.id) ? `<button class="danger" onclick="event.stopPropagation(); deleteFood(${food.id})">حذف</button>` : ""}
@@ -1127,7 +1223,7 @@
         return;
       }
       $("#entries").innerHTML = `<table>
-        <tr><th>غذا</th><th>واحد ۱۰۰g</th><th>کالری</th><th>پروتئین</th><th>چربی</th><th>کربوهیدرات</th><th>فیبر</th><th></th></tr>
+        <tr><th>غذا</th><th>تعداد</th><th>واحد</th><th>کالری</th><th>پروتئین</th><th>چربی</th><th>کربوهیدرات</th><th>فیبر</th><th></th></tr>
         ${log.entries.map((entry, index) => {
           const food = foods.find(x => x.id === entry.foodId);
           if (!food) return "";
@@ -1135,6 +1231,7 @@
           return `<tr>
             <td>${food.id}. ${esc(food.name)}</td>
             <td><input type="number" step="0.1" value="${u}" onchange="setUnits(${index}, this.value)"></td>
+            <td>${esc(foodUnit(food))}</td>
             <td>${f(food.cal * u, 1)}</td>
             <td>${f(food.protein * u, 1)}</td>
             <td>${f(food.fat * u, 1)}</td>
@@ -1365,19 +1462,21 @@
       document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="foodModal">
         <div class="modal">
           <h2>${food ? "ویرایش غذا" : "افزودن غذای جدید به دیتابیس"}</h2>
-          <p class="muted">${food ? "مقدارهای این غذا را به ازای ۱۰۰ گرم اصلاح کن." : "مقدارها را به ازای ۱۰۰ گرم وارد کن. شماره غذا خودکار ساخته می‌شود."}</p>
+          <p class="muted">${food ? "مقدارهای این غذا را به ازای واحد انتخابی اصلاح کن." : "واحد غذا را انتخاب کن و مقدارها را برای همان واحد وارد کن. شماره غذا خودکار ساخته می‌شود."}</p>
           <input id="editingFoodId" type="hidden" value="${food?.id || ""}">
           <div class="grid-3">
             <div><label>نام غذا</label><input id="newFoodName" value="${esc(food?.name || "")}"></div>
             <div><label>دسته</label><select id="newFoodCategory">
               ${foodCategories.filter(([key]) => key !== "all" && key !== "custom").map(([key, label]) => `<option value="${key}" ${getFoodCategory(food || { id: 0, name: "" }) === key ? "selected" : ""}>${label}</option>`).join("")}
             </select></div>
-            <div><label>کالری (kcal/100g)</label><input id="newFoodCal" type="number" value="${food?.cal || ""}"></div>
-            <div><label>پروتئین (g/100g)</label><input id="newFoodProtein" type="number" step="0.1" value="${food?.protein || ""}"></div>
-            <div><label>چربی (g/100g)</label><input id="newFoodFat" type="number" step="0.1" value="${food?.fat || ""}"></div>
-            <div><label>کربوهیدرات (g/100g)</label><input id="newFoodCarbs" type="number" step="0.1" value="${food?.carbs || ""}"></div>
-            <div><label>فیبر (g/100g)</label><input id="newFoodFiber" type="number" step="0.1" value="${food?.fiber || ""}"></div>
-            <div><label>آب (g/100g)</label><input id="newFoodWater" type="number" step="0.1" value="${food?.water || ""}"></div>
+            <div><label>واحد</label><select id="newFoodUnit">${unitOptions(foodUnit(food))}</select></div>
+            <div><label>واحد دلخواه</label><input id="newFoodCustomUnit" placeholder="مثلاً ۱ کفگیر" value="${isKnownUnit(foodUnit(food)) ? "" : esc(foodUnit(food))}"></div>
+            <div><label>کالری در هر واحد</label><input id="newFoodCal" type="number" value="${food?.cal || ""}"></div>
+            <div><label>پروتئین در هر واحد (g)</label><input id="newFoodProtein" type="number" step="0.1" value="${food?.protein || ""}"></div>
+            <div><label>چربی در هر واحد (g)</label><input id="newFoodFat" type="number" step="0.1" value="${food?.fat || ""}"></div>
+            <div><label>کربوهیدرات در هر واحد (g)</label><input id="newFoodCarbs" type="number" step="0.1" value="${food?.carbs || ""}"></div>
+            <div><label>فیبر در هر واحد (g)</label><input id="newFoodFiber" type="number" step="0.1" value="${food?.fiber || ""}"></div>
+            <div><label>آب در هر واحد (g/ml)</label><input id="newFoodWater" type="number" step="0.1" value="${food?.water || ""}"></div>
           </div>
           <div class="grid" style="margin-top:14px">
             <button onclick="saveFood()">${food ? "ذخیره تغییرات" : "افزودن به لیست"}</button>
@@ -1406,6 +1505,7 @@
         carbs: Number($("#newFoodCarbs").value || 0),
         fiber: Number($("#newFoodFiber").value || 0),
         water: Number($("#newFoodWater").value || 0),
+        unit: $("#newFoodCustomUnit").value.trim() || $("#newFoodUnit").value || "۱۰۰ گرم",
         category: $("#newFoodCategory").value || "meal"
       };
       const existingIndex = foods.findIndex(item => item.id === id);
