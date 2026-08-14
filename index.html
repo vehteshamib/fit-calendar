@@ -63,6 +63,10 @@
     }
     input:focus, select:focus { outline: 0; border-color: #78b992; box-shadow: 0 0 0 4px rgba(31,107,77,.11); }
     label { display: block; margin: 10px 0 6px; color: var(--muted); font-size: 13px; }
+    body[dir="ltr"] { direction: ltr; }
+    body[dir="ltr"] th, body[dir="ltr"] td { text-align: left; }
+    body[dir="ltr"] .date-rail, body[dir="ltr"] .hero-bars { direction: ltr; }
+    body[dir="ltr"] .day-card, body[dir="ltr"] .ring-row { direction: ltr; }
 
     .app { max-width: 1460px; margin: 0 auto; padding: 24px; }
     .topbar {
@@ -91,6 +95,7 @@
     }
     .userbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .pill { border: 1px solid var(--line); background: rgba(255,255,255,.8); border-radius: 999px; padding: 9px 13px; color: var(--muted); }
+    .lang-select { width: auto; min-width: 118px; padding: 8px 10px; background: rgba(255,255,255,.86); }
 
     .card {
       position: relative;
@@ -479,9 +484,14 @@
 
     const root = document.getElementById("root");
     const $ = (selector) => document.querySelector(selector);
-    const f = (n, d = 0) => Number(n || 0).toLocaleString("fa-IR", { maximumFractionDigits: d, minimumFractionDigits: d });
+    const f = (n, d = 0) => Number(n || 0).toLocaleString(LANGS[state?.lang || "fa"]?.locale || "fa-IR", { maximumFractionDigits: d, minimumFractionDigits: d });
     const isoToday = () => new Date().toISOString().slice(0, 10);
-    const defaultFoods = foods.map(food => ({ ...food }));
+    const LANGS = {
+      fa: { label: "فارسی", dir: "rtl", locale: "fa-IR" },
+      en: { label: "English", dir: "ltr", locale: "en-US" },
+      fi: { label: "Suomi", dir: "ltr", locale: "fi-FI" }
+    };
+    let defaultFoods = foods.map(food => ({ ...food }));
     const rawIngredients = [
       [1,"سینه مرغ خام بدون پوست",120,22.5,2.6,0,0,74,"۱۰۰ گرم","protein"],
       [2,"ران مرغ خام بدون پوست",144,19,7,0,0,73,"۱۰۰ گرم","protein"],
@@ -636,6 +646,68 @@
       [149,"آب",0,0,0,0,0,200,"۱ لیوان","drink"],
       [150,"آب مرغ یا گوشت",15,2,0.5,1,0,95,"۱۰۰ گرم","drink"]
     ].map(([id,name,cal,protein,fat,carbs,fiber,water,unit,category]) => ({ id, name, cal, protein, fat, carbs, fiber, water, unit, category })));
+    rawIngredients.push(...[
+      [151,"بوقلمون چرخ‌کرده خام",149,22,7,0,0,70,"۱۰۰ گرم","protein"],
+      [152,"گوشت خوک خام",242,21,17,0,0,62,"۱۰۰ گرم","protein"],
+      [153,"ماهی کاد خام",82,18,0.7,0,0,81,"۱۰۰ گرم","protein"],
+      [154,"ماهی شاه‌ماهی خام",158,18,9,0,0,72,"۱۰۰ گرم","protein"],
+      [155,"صدف خام",86,12,2.5,4,0,80,"۱۰۰ گرم","protein"],
+      [156,"سیتان",370,75,2,14,1,8,"۱۰۰ گرم","protein"],
+      [157,"تمپه",193,19,11,9,5,59,"۱۰۰ گرم","protein"],
+      [158,"نخودفرنگی پروتئین پودر",390,80,6,7,2,5,"۱ اسکوپ","protein"],
+      [159,"سیب‌زمینی شیرین خام",86,1.6,0.1,20,3,77,"۱۰۰ گرم","grain"],
+      [160,"کاساوا خام",160,1.4,0.3,38,1.8,60,"۱۰۰ گرم","grain"],
+      [161,"جو پرک",354,12,2.3,73,17,10,"۱۰۰ گرم","grain"],
+      [162,"ارزن خشک",378,11,4.2,73,8.5,9,"۱۰۰ گرم","grain"],
+      [163,"گندم سیاه خشک",343,13,3.4,72,10,10,"۱۰۰ گرم","grain"],
+      [164,"سمولینا",360,12.7,1.1,73,3.9,12,"۱۰۰ گرم","grain"],
+      [165,"آرد نارگیل",400,20,14,60,40,4,"۱۰۰ گرم","grain"],
+      [166,"آرد بادام",571,21,50,21,11,4,"۱۰۰ گرم","grain"],
+      [167,"شیر نارگیل",230,2.3,24,5.5,2.2,67,"۱۰۰ گرم","dairy"],
+      [168,"ماست نارگیلی",110,1,6,12,1,78,"۱۰۰ گرم","dairy"],
+      [169,"پنیر چدار",403,25,33,1.3,0,37,"۱۰۰ گرم","dairy"],
+      [170,"پنیر ریکوتا",174,11,13,3,0,72,"۱۰۰ گرم","dairy"],
+      [171,"پنیر آبی",353,21,29,2.3,0,42,"۱۰۰ گرم","dairy"],
+      [172,"روغن نارگیل",121,0,13.5,0,0,0,"۱ قاشق غذاخوری","fat"],
+      [173,"آووکادو",240,3,22,13,10,109,"۱ عدد متوسط","fat"],
+      [174,"زیتون",40,0.3,4,1,1,25,"۳۰ گرم","fat"],
+      [175,"بادام هندی",166,5.4,13.2,9,1,1,"۳۰ گرم","fat"],
+      [176,"مکادمیا",215,2.4,22.7,4,2.6,1,"۳۰ گرم","fat"],
+      [177,"پیازچه",32,1.8,0.2,7.3,2.6,89,"۱۰۰ گرم","vegetable"],
+      [178,"تره‌فرنگی",61,1.5,0.3,14,1.8,83,"۱۰۰ گرم","vegetable"],
+      [179,"رازیانه",31,1.2,0.2,7.3,3.1,90,"۱۰۰ گرم","vegetable"],
+      [180,"مارچوبه",20,2.2,0.1,3.9,2.1,93,"۱۰۰ گرم","vegetable"],
+      [181,"کلم بروکسل",43,3.4,0.3,9,3.8,86,"۱۰۰ گرم","vegetable"],
+      [182,"کلم کیل",49,4.3,0.9,8.8,3.6,84,"۱۰۰ گرم","vegetable"],
+      [183,"آرتیشو",47,3.3,0.2,11,5.4,85,"۱۰۰ گرم","vegetable"],
+      [184,"کدو اسپاگتی",31,0.6,0.6,7,1.5,92,"۱۰۰ گرم","vegetable"],
+      [185,"گلابی",101,0.6,0.2,27,5.5,149,"۱ عدد متوسط","fruit"],
+      [186,"هلو",59,1.4,0.4,14,2.3,135,"۱ عدد متوسط","fruit"],
+      [187,"آناناس",82,0.9,0.2,22,2.3,142,"۱ پیمانه","fruit"],
+      [188,"بلوبری",84,1.1,0.5,21,3.6,125,"۱ پیمانه","fruit"],
+      [189,"تمشک",64,1.5,0.8,15,8,123,"۱ پیمانه","fruit"],
+      [190,"انبه",135,1.1,0.6,35,3.7,200,"۱ عدد متوسط","fruit"],
+      [191,"پاپایا",119,1.9,0.4,30,4.7,252,"۱ عدد متوسط","fruit"],
+      [192,"سس سویا کم‌نمک",8,1.3,0,0.8,0.1,13,"۱ قاشق غذاخوری","spice"],
+      [193,"سس ماهی",10,1.5,0,0.7,0,12,"۱ قاشق غذاخوری","spice"],
+      [194,"میرین",35,0,0,6,0,9,"۱ قاشق غذاخوری","spice"],
+      [195,"میسو",34,2,1,4.3,0.9,7,"۱ قاشق غذاخوری","spice"],
+      [196,"سس خردل",10,0.6,0.6,0.8,0.5,12,"۱ قاشق غذاخوری","spice"],
+      [197,"سس باربیکیو",29,0.2,0.1,7,0.2,9,"۱ قاشق غذاخوری","spice"],
+      [198,"پودر کاری",20,0.8,0.9,3.4,1.5,0,"۱ قاشق غذاخوری","spice"],
+      [199,"پاپریکا",19,0.9,0.9,3.7,2.4,0,"۱ قاشق غذاخوری","spice"],
+      [200,"پودر سیر",10,0.5,0,2.3,0.3,0,"۱ قاشق چای‌خوری","spice"],
+      [201,"پودر پیاز",8,0.2,0,1.9,0.3,0,"۱ قاشق چای‌خوری","spice"],
+      [202,"اورگانو خشک",5,0.2,0.1,1.2,0.8,0,"۱ قاشق چای‌خوری","spice"],
+      [203,"آویشن خشک",3,0.1,0,0.7,0.4,0,"۱ قاشق چای‌خوری","spice"],
+      [204,"رزماری خشک",4,0.1,0.2,0.8,0.5,0,"۱ قاشق چای‌خوری","spice"],
+      [205,"وانیل",12,0,0,0.6,0,4,"۱ قاشق چای‌خوری","spice"],
+      [206,"شربت افرا",52,0,0,13.4,0,5,"۱ قاشق غذاخوری","sweet"],
+      [207,"شکر قهوه‌ای",52,0,0,13.4,0,0,"۱ قاشق غذاخوری","sweet"],
+      [208,"استویا",0,0,0,0,0,0,"۱ قاشق چای‌خوری","sweet"],
+      [209,"کاکائو پودر",12,1,0.7,3,1.8,0,"۱ قاشق غذاخوری","sweet"],
+      [210,"آب سبزیجات",40,1.5,0.2,8,1,185,"۱ لیوان","drink"]
+    ].map(([id,name,cal,protein,fat,carbs,fiber,water,unit,category]) => ({ id, name, cal, protein, fat, carbs, fiber, water, unit, category })));
     const defaultIngredients = rawIngredients.map(item => ({ ...item }));
     const ingredientCategories = [
       ["all", "همه"],
@@ -665,11 +737,135 @@
       ["drink", "نوشیدنی"],
       ["custom", "غذاهای من"]
     ];
+    const CAT_LABELS = {
+      fa: {
+        all: "همه", fruit: "میوه", vegetable: "سبزیجات", protein: "گوشت و پروتئین", dairy: "لبنیات", grain: "غلات و کربوهیدرات",
+        legume: "حبوبات", fat: "مغزها و چربی‌ها", meal: "غذاهای کامل", sweet: "شیرینی و تنقلات", drink: "نوشیدنی", custom: "غذاهای من",
+        spice: "چاشنی و ادویه"
+      },
+      en: {
+        all: "All", fruit: "Fruit", vegetable: "Vegetables", protein: "Meat & protein", dairy: "Dairy", grain: "Grains & carbs",
+        legume: "Legumes", fat: "Nuts & fats", meal: "Meals", sweet: "Sweets & snacks", drink: "Drinks", custom: "My items",
+        spice: "Spices & seasonings"
+      },
+      fi: {
+        all: "Kaikki", fruit: "Hedelmät", vegetable: "Kasvikset", protein: "Liha ja proteiini", dairy: "Maitotuotteet", grain: "Viljat ja hiilihydraatit",
+        legume: "Palkokasvit", fat: "Pähkinät ja rasvat", meal: "Ateriat", sweet: "Makeat ja naposteltavat", drink: "Juomat", custom: "Omat",
+        spice: "Mausteet"
+      }
+    };
+    const UNIT_LABELS = {
+      fa: { "۱۰۰ گرم": "۱۰۰ گرم", "۱ عدد": "۱ عدد", "۱ عدد متوسط": "۱ عدد متوسط", "۱ لیوان": "۱ لیوان", "۱ پیمانه": "۱ پیمانه", "۱ قاشق غذاخوری": "۱ قاشق غذاخوری", "۱ قاشق چای‌خوری": "۱ قاشق چای‌خوری", "۱ کاسه": "۱ کاسه", "۱ بشقاب": "۱ بشقاب", "۱ پرس": "۱ پرس", "۱ برش": "۱ برش", "۱ کفگیر": "۱ کفگیر", "۱ اسکوپ": "۱ اسکوپ", "۳۰ گرم": "۳۰ گرم" },
+      en: { "۱۰۰ گرم": "100 g", "۱ عدد": "1 piece", "۱ عدد متوسط": "1 medium", "۱ لیوان": "1 glass", "۱ پیمانه": "1 cup", "۱ قاشق غذاخوری": "1 tbsp", "۱ قاشق چای‌خوری": "1 tsp", "۱ کاسه": "1 bowl", "۱ بشقاب": "1 plate", "۱ پرس": "1 serving", "۱ برش": "1 slice", "۱ کفگیر": "1 scoop/spoon", "۱ اسکوپ": "1 scoop", "۳۰ گرم": "30 g" },
+      fi: { "۱۰۰ گرم": "100 g", "۱ عدد": "1 kpl", "۱ عدد متوسط": "1 keskikokoinen", "۱ لیوان": "1 lasi", "۱ پیمانه": "1 kuppi", "۱ قاشق غذاخوری": "1 rkl", "۱ قاشق چای‌خوری": "1 tl", "۱ کاسه": "1 kulho", "۱ بشقاب": "1 lautanen", "۱ پرس": "1 annos", "۱ برش": "1 viipale", "۱ کفگیر": "1 kauhallinen", "۱ اسکوپ": "1 mitta", "۳۰ گرم": "30 g" }
+    };
+    const UI = {
+      fa: {
+        logout: "خروج", email: "ایمیل", password: "پسورد", signup: "ساخت حساب", login: "ورود", search: "جستجو",
+        foodDb: "دیتابیس غذا", addFood: "افزودن غذای جدید", cooking: "آشپزی", unit: "واحد", protein: "پروتئین", fiber: "فیبر",
+        edit: "ویرایش", delete: "حذف", today: "امروز", date: "تاریخ", calories: "کالری", fat: "چربی", carbs: "کربوهیدرات",
+        water: "آب", steps: "قدم", exercise: "ورزش", weight: "وزن", target: "هدف", save: "ذخیره", cancel: "انصراف",
+        amount: "تعداد", category: "دسته", customUnit: "واحد دلخواه", name: "نام", ingredients: "مواد اولیه", recipe: "دستور پخت"
+      },
+      en: {
+        logout: "Log out", email: "Email", password: "Password", signup: "Create account", login: "Log in", search: "Search",
+        foodDb: "Food database", addFood: "Add food", cooking: "Cooking", unit: "Unit", protein: "Protein", fiber: "Fiber",
+        edit: "Edit", delete: "Delete", today: "Today", date: "Date", calories: "Calories", fat: "Fat", carbs: "Carbs",
+        water: "Water", steps: "Steps", exercise: "Exercise", weight: "Weight", target: "Target", save: "Save", cancel: "Cancel",
+        amount: "Amount", category: "Category", customUnit: "Custom unit", name: "Name", ingredients: "Ingredients", recipe: "Recipe"
+      },
+      fi: {
+        logout: "Kirjaudu ulos", email: "Sähköposti", password: "Salasana", signup: "Luo tili", login: "Kirjaudu", search: "Haku",
+        foodDb: "Ruokatietokanta", addFood: "Lisää ruoka", cooking: "Ruoanlaitto", unit: "Yksikkö", protein: "Proteiini", fiber: "Kuitu",
+        edit: "Muokkaa", delete: "Poista", today: "Tänään", date: "Päivä", calories: "Kalorit", fat: "Rasva", carbs: "Hiilihydraatit",
+        water: "Vesi", steps: "Askeleet", exercise: "Liikunta", weight: "Paino", target: "Tavoite", save: "Tallenna", cancel: "Peruuta",
+        amount: "Määrä", category: "Kategoria", customUnit: "Oma yksikkö", name: "Nimi", ingredients: "Raaka-aineet", recipe: "Resepti"
+      }
+    };
+    foods.push(...[
+      [121,"نان تست",247,13,4.2,41,7,38,"grain"],
+      [122,"نان چاودار فنلاندی",259,9,3.3,48,10,36,"grain"],
+      [123,"نان باگت",270,8.8,1.5,56,2.5,34,"grain"],
+      [124,"تورتیلا گندم",304,8,8,50,3,30,"grain"],
+      [125,"کراکر سبوس‌دار",430,10,14,65,8,4,"grain"],
+      [126,"گرانولا",471,10,20,64,7,5,"grain"],
+      [127,"موسلی",350,10,6,64,8,8,"grain"],
+      [128,"پنکیک ساده",227,6,10,28,1,52,"meal"],
+      [129,"وافل",291,7,14,33,1,45,"meal"],
+      [130,"فرنی جو دوسر",68,2.4,1.4,12,1.7,84,"meal"],
+      [131,"تخم‌مرغ آب‌پز",77,6.3,5.3,0.6,0,38,"protein"],
+      [132,"تخم‌مرغ نیمرو",90,6.3,7,0.4,0,35,"protein"],
+      [133,"بیکن",541,37,42,1.4,0,18,"protein"],
+      [134,"ژامبون بوقلمون",126,19,4,2,0,72,"protein"],
+      [135,"هات‌داگ",290,11,26,4,0,56,"protein"],
+      [136,"مرغ گریل‌شده",165,31,3.6,0,0,65,"protein"],
+      [137,"استیک گوشت",271,25,19,0,0,55,"protein"],
+      [138,"کوفته گوشت",250,14,18,8,1,58,"meal"],
+      [139,"سوپ مرغ",75,6,3,6,1,86,"meal"],
+      [140,"سوپ سبزیجات",45,2,1.5,7,2,88,"meal"],
+      [141,"سالاد سزار",180,8,13,8,2,70,"meal"],
+      [142,"سالاد یونانی",120,4,9,7,2,78,"meal"],
+      [143,"سالاد تن ماهی",160,15,9,4,1,70,"meal"],
+      [144,"سوشی رول",150,5,2,28,1,63,"meal"],
+      [145,"رامن",436,10,16,60,3,20,"meal"],
+      [146,"کاری مرغ",180,12,10,10,2,70,"meal"],
+      [147,"برنج سرخ‌کرده",168,4,6,24,1.2,64,"meal"],
+      [148,"تاکو گوشت",226,10,13,17,3,55,"meal"],
+      [149,"بوریتو مرغ",206,11,7,24,3,58,"meal"],
+      [150,"فلافل",333,13,18,32,5,35,"meal"],
+      [151,"هوموس",166,8,10,14,6,65,"meal"],
+      [152,"موزلی با ماست",110,5,3,16,2,72,"meal"],
+      [153,"ماکارونی با پنیر",164,7,7,19,1,65,"meal"],
+      [154,"پوره سیب‌زمینی",88,1.7,3,14,1.3,80,"meal"],
+      [155,"ماهی دودی فنلاندی",190,22,11,0,0,62,"protein"],
+      [156,"سوپ سالمون فنلاندی",110,7,6,7,1,82,"meal"],
+      [157,"پای کارلیایی",260,7,9,38,2,45,"meal"],
+      [158,"کوفته فنلاندی",220,13,14,10,1,60,"meal"],
+      [159,"ماست اسکیر",63,11,0.2,4,0,83,"dairy"],
+      [160,"پنیر کوارک",67,12,0.2,4,0,82,"dairy"],
+      [161,"پنیر فتا",264,14,21,4,0,55,"dairy"],
+      [162,"پنیر پارمزان",431,38,29,4,0,30,"dairy"],
+      [163,"شیر جو دوسر",46,1,1.5,7,1,90,"drink"],
+      [164,"قهوه با شیر",30,1.5,1,3,0,94,"drink"],
+      [165,"لاته",60,3,2.5,6,0,88,"drink"],
+      [166,"چای شیرین",30,0,0,7.5,0,92,"drink"],
+      [167,"آب سیب",46,0.1,0.1,11,0.2,88,"drink"],
+      [168,"اسموتی میوه",75,1,1,16,2,80,"drink"],
+      [169,"چیپس سیب‌زمینی",536,7,35,53,4.8,2,"sweet"],
+      [170,"پاپ‌کورن",387,13,5,78,15,4,"sweet"],
+      [171,"پرتزل",380,10,3,80,3,4,"sweet"],
+      [172,"کراسان",406,8,21,46,2.6,23,"sweet"],
+      [173,"مافین بلوبری",377,5,16,54,1.5,25,"sweet"],
+      [174,"دونات",452,5,25,51,1.5,18,"sweet"],
+      [175,"شکلات شیری",535,7,30,59,3,1,"sweet"],
+      [176,"سس سالسا",36,1.5,0.2,7,1.5,88,"sweet"],
+      [177,"سس باربیکیو",172,1,0.5,41,1,54,"sweet"],
+      [178,"سس خردل",66,4,4,5,3,82,"sweet"],
+      [179,"سس پستو",428,5,42,6,2,42,"fat"],
+      [180,"سس تریاکی",89,6,0,16,0,65,"sweet"]
+    ].map(([id,name,cal,protein,fat,carbs,fiber,water,category]) => {
+      const resolvedCategory = category || inferFoodCategory(id, name);
+      const serving = inferFoodServing(id, name, resolvedCategory);
+      const factor = serving.factor || 1;
+      return {
+        id, name,
+        cal: roundFoodValue(cal * factor),
+        protein: roundFoodValue(protein * factor),
+        fat: roundFoodValue(fat * factor),
+        carbs: roundFoodValue(carbs * factor),
+        fiber: roundFoodValue(fiber * factor),
+        water: roundFoodValue(water * factor),
+        unit: serving.unit,
+        category: resolvedCategory
+      };
+    }));
+    defaultFoods = foods.map(food => ({ ...food }));
     const storeKey = "fitCalendarLocalV3";
     const SUPABASE_URL = "https://sdofiorarcavuhrrfcei.supabase.co";
     const SUPABASE_KEY = "sb_publishable_XkbTLJ4f657yVcpUzWc_0w_052_OPbm";
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let authUser = null;
+    let currentLang = localStorage.getItem("fitCalendarLang") || "fa";
     let state = defaultState();
     let saveTimer = null;
 
@@ -686,6 +882,7 @@
         customIngredients: [],
         ingredientOverrides: {},
         ingredientTab: "all",
+        lang: currentLang,
         visibleCharts: defaultChartKeys(),
         logs: {},
         currentDate,
@@ -705,10 +902,13 @@
       next.customIngredients ||= [];
       next.ingredientOverrides ||= {};
       next.ingredientTab ||= "all";
+      next.lang ||= localStorage.getItem("fitCalendarLang") || "fa";
       next.visibleCharts ||= defaultChartKeys();
       next.logs ||= {};
       next.currentDate ||= isoToday();
       next.chartRange ||= { from: addDays(next.currentDate, -30), to: next.currentDate };
+      currentLang = next.lang || currentLang || "fa";
+      localStorage.setItem("fitCalendarLang", currentLang);
       resetFoods(next);
       resetIngredients(next);
       return next;
@@ -760,6 +960,7 @@
         customIngredients: state.customIngredients || [],
         ingredientOverrides: state.ingredientOverrides || {},
         ingredientTab: state.ingredientTab || "all",
+        lang: state.lang || "fa",
         visibleCharts: state.visibleCharts || defaultChartKeys(),
         logs: state.logs || {},
         currentDate: state.currentDate || isoToday(),
@@ -777,13 +978,13 @@
       if (error) throw error;
       const localBackup = JSON.parse(localStorage.getItem(`${storeKey}:${user.id}`) || "{}");
       state = prepareState(data?.data || localBackup || {});
-      state.user = { email: user.email, username: user.user_metadata?.username || user.email?.split("@")[0] };
+      state.user = { email: user.email };
       await saveNow();
     }
 
     async function saveNow() {
       if (!authUser) return;
-      state.user = { email: authUser.email, username: state.user?.username || authUser.email?.split("@")[0] };
+      state.user = { email: authUser.email };
       const payload = exportState();
       localStorage.setItem(`${storeKey}:${authUser.id}`, JSON.stringify(payload));
       const { error } = await db.from("fit_calendar_states").upsert({
@@ -800,15 +1001,163 @@
       saveTimer = setTimeout(saveNow, 250);
     }
 
+    function lang() {
+      return currentLang || "fa";
+    }
+
+    function t(key) {
+      return UI[lang()]?.[key] || UI.fa[key] || key;
+    }
+
+    function applyLanguage() {
+      const active = lang();
+      document.documentElement.lang = active;
+      document.documentElement.dir = LANGS[active]?.dir || "rtl";
+      document.body.dir = LANGS[active]?.dir || "rtl";
+      translateStaticText(root);
+    }
+
+    function languageSelect() {
+      return `<select class="lang-select" onchange="setLanguage(this.value)" aria-label="Language">
+        ${Object.entries(LANGS).map(([key, info]) => `<option value="${key}" ${lang() === key ? "selected" : ""}>${info.label}</option>`).join("")}
+      </select>`;
+    }
+
+    function setLanguage(value) {
+      state.lang = LANGS[value] ? value : "fa";
+      currentLang = state.lang;
+      localStorage.setItem("fitCalendarLang", state.lang);
+      save();
+      if (authUser) routeAfterAuth();
+      else showAuth();
+    }
+
+    function textMap() {
+      return {
+        en: {
+          "دفترچه هوشمند رژیم و پیشرفت": "Smart diet and progress journal",
+          "ورود یا ساخت حساب": "Log in or create account",
+          "ثبت‌نام واقعی است؛ اطلاعات هر کاربر خصوصی و جدا در اکانت خودش ذخیره می‌شود.": "Accounts are real; each user's data is private and stored separately.",
+          "ایمیل": "Email", "پسورد": "Password", "ساخت حساب": "Create account", "ورود": "Log in", "خروج": "Log out",
+          "مشخصات": "Profile", "گزارش": "Report", "هدف": "Goals", "لاگ روزانه": "Daily log",
+          "دیتابیس غذا": "Food database", "افزودن غذای جدید": "Add food", "آشپزی": "Cooking", "جستجو": "Search",
+          "تاریخ": "Date", "تعداد پیش‌فرض از واحد غذا": "Default food amount", "آب، قدم، ورزش و وزن": "Water, steps, exercise and weight",
+          "وزن امروز (kg)": "Today's weight (kg)", "شروع نمودار": "Chart start", "پایان نمودار": "Chart end",
+          "هفته گذشته": "Last week", "ماه گذشته": "Last month", "سه ماه گذشته": "Last 3 months", "سال گذشته": "Last year",
+          "اعمال بازه": "Apply range", "انتخاب نمودار": "Choose charts", "امروز": "Today", "حذف": "Delete", "ویرایش": "Edit",
+          "واحد": "Unit", "دسته": "Category", "واحد دلخواه": "Custom unit", "کالری در هر واحد": "Calories per unit",
+          "پروتئین در هر واحد (g)": "Protein per unit (g)", "چربی در هر واحد (g)": "Fat per unit (g)",
+          "کربوهیدرات در هر واحد (g)": "Carbs per unit (g)", "فیبر در هر واحد (g)": "Fiber per unit (g)", "آب در هر واحد (g/ml)": "Water per unit (g/ml)",
+          "ذخیره تغییرات": "Save changes", "افزودن به لیست": "Add to list", "انصراف": "Cancel",
+          "مواد اولیه": "Ingredients", "دستور پخت": "Recipe", "افزودن ماده خام": "Add ingredient", "به‌روزرسانی": "Refresh",
+          "ذخیره به غذاهای من": "Save to my foods", "ذخیره تغییرات رسپی": "Save recipe changes", "ویرایش رسپی آشپزی": "Edit cooking recipe"
+        },
+        fi: {
+          "دفترچه هوشمند رژیم و پیشرفت": "Älykäs ruokavalio- ja edistymispäiväkirja",
+          "ورود یا ساخت حساب": "Kirjaudu tai luo tili",
+          "ثبت‌نام واقعی است؛ اطلاعات هر کاربر خصوصی و جدا در اکانت خودش ذخیره می‌شود.": "Tilit ovat oikeita; jokaisen käyttäjän tiedot tallennetaan erikseen ja yksityisesti.",
+          "ایمیل": "Sähköposti", "پسورد": "Salasana", "ساخت حساب": "Luo tili", "ورود": "Kirjaudu", "خروج": "Kirjaudu ulos",
+          "مشخصات": "Profiili", "گزارش": "Raportti", "هدف": "Tavoitteet", "لاگ روزانه": "Päiväkirja",
+          "دیتابیس غذا": "Ruokatietokanta", "افزودن غذای جدید": "Lisää ruoka", "آشپزی": "Ruoanlaitto", "جستجو": "Haku",
+          "تاریخ": "Päivä", "تعداد پیش‌فرض از واحد غذا": "Oletusmäärä", "آب، قدم، ورزش و وزن": "Vesi, askeleet, liikunta ja paino",
+          "وزن امروز (kg)": "Tämän päivän paino (kg)", "شروع نمودار": "Kaavion alku", "پایان نمودار": "Kaavion loppu",
+          "هفته گذشته": "Viime viikko", "ماه گذشته": "Viime kuukausi", "سه ماه گذشته": "Viimeiset 3 kk", "سال گذشته": "Viime vuosi",
+          "اعمال بازه": "Käytä väliä", "انتخاب نمودار": "Valitse kaaviot", "امروز": "Tänään", "حذف": "Poista", "ویرایش": "Muokkaa",
+          "واحد": "Yksikkö", "دسته": "Kategoria", "واحد دلخواه": "Oma yksikkö", "کالری در هر واحد": "Kalorit per yksikkö",
+          "پروتئین در هر واحد (g)": "Proteiini per yksikkö (g)", "چربی در هر واحد (g)": "Rasva per yksikkö (g)",
+          "کربوهیدرات در هر واحد (g)": "Hiilihydraatit per yksikkö (g)", "فیبر در هر واحد (g)": "Kuitu per yksikkö (g)", "آب در هر واحد (g/ml)": "Vesi per yksikkö (g/ml)",
+          "ذخیره تغییرات": "Tallenna muutokset", "افزودن به لیست": "Lisää listaan", "انصراف": "Peruuta",
+          "مواد اولیه": "Raaka-aineet", "دستور پخت": "Resepti", "افزودن ماده خام": "Lisää raaka-aine", "به‌روزرسانی": "Päivitä",
+          "ذخیره به غذاهای من": "Tallenna omiin ruokiin", "ذخیره تغییرات رسپی": "Tallenna reseptin muutokset", "ویرایش رسپی آشپزی": "Muokkaa reseptiä"
+        }
+      }[lang()] || {};
+    }
+
+    function translateStaticText(container) {
+      if (lang() === "fa" || !container) return;
+      const map = textMap();
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach(node => {
+        const text = node.nodeValue.trim();
+        if (map[text]) node.nodeValue = node.nodeValue.replace(text, map[text]);
+      });
+      container.querySelectorAll("input[placeholder]").forEach(input => {
+        const value = input.getAttribute("placeholder");
+        if (map[value]) input.setAttribute("placeholder", map[value]);
+        if (value?.includes("مرغ")) input.setAttribute("placeholder", lang() === "en" ? "e.g. chicken, rice, apple" : "esim. kana, riisi, omena");
+        if (value?.includes("قورمه")) input.setAttribute("placeholder", lang() === "en" ? "e.g. homemade stew" : "esim. kotitekoinen keitto");
+      });
+    }
+
+    function categoryText(key, kind = "food") {
+      if (kind === "ingredient") return CAT_LABELS[lang()]?.[key] || ingredientCategories.find(([id]) => id === key)?.[1] || key;
+      return CAT_LABELS[lang()]?.[key] || foodCategories.find(([id]) => id === key)?.[1] || key;
+    }
+
+    function unitText(unit) {
+      return UNIT_LABELS[lang()]?.[unit] || unit || UNIT_LABELS[lang()]?.["۱۰۰ گرم"] || "۱۰۰ گرم";
+    }
+
+    const NAME_REPLACEMENTS = {
+      en: [
+        ["سینه مرغ", "chicken breast"], ["ران مرغ", "chicken thigh"], ["مرغ", "chicken"], ["گوشت گوساله", "beef"], ["گوشت گوسفند", "lamb"], ["گوشت بوقلمون", "turkey"], ["گوشت خوک", "pork"],
+        ["ماهی سالمون", "salmon"], ["ماهی قزل‌آلا", "trout"], ["ماهی تن", "tuna"], ["ساردین", "sardine"], ["میگو", "shrimp"], ["تخم‌مرغ", "egg"], ["سفیده", "egg white"], ["زرده", "egg yolk"],
+        ["برنج سفید", "white rice"], ["برنج قهوه‌ای", "brown rice"], ["برنج باسماتی", "basmati rice"], ["برنج", "rice"], ["جو دوسر", "oats"], ["گندم", "wheat"], ["جو", "barley"], ["آرد", "flour"], ["پاستا", "pasta"], ["ماکارونی", "macaroni"],
+        ["عدس", "lentils"], ["لوبیا چیتی", "pinto beans"], ["لوبیا قرمز", "kidney beans"], ["لوبیا سفید", "white beans"], ["نخود", "chickpeas"], ["لپه", "split peas"], ["ماش", "mung beans"], ["سویا", "soy"],
+        ["روغن زیتون", "olive oil"], ["روغن آفتابگردان", "sunflower oil"], ["روغن کنجد", "sesame oil"], ["روغن نارگیل", "coconut oil"], ["کره بادام‌زمینی", "peanut butter"], ["کره", "butter"],
+        ["شیر کم‌چرب", "low-fat milk"], ["شیر پرچرب", "whole milk"], ["شیر جو دوسر", "oat milk"], ["شیر سویا", "soy milk"], ["ماست یونانی", "Greek yogurt"], ["ماست", "yogurt"], ["پنیر", "cheese"], ["خامه", "cream"],
+        ["سیب‌زمینی", "potato"], ["گوجه‌فرنگی", "tomato"], ["رب گوجه‌فرنگی", "tomato paste"], ["خیار", "cucumber"], ["هویج", "carrot"], ["پیاز", "onion"], ["سیر", "garlic"], ["فلفل دلمه‌ای", "bell pepper"],
+        ["کاهو", "lettuce"], ["کلم", "cabbage"], ["بروکلی", "broccoli"], ["اسفناج", "spinach"], ["قارچ", "mushroom"], ["بادمجان", "eggplant"], ["کدو", "zucchini"], ["جعفری", "parsley"], ["نعناع", "mint"],
+        ["سیب", "apple"], ["موز", "banana"], ["پرتقال", "orange"], ["لیموترش", "lime"], ["انگور", "grapes"], ["کیوی", "kiwi"], ["گلابی", "pear"], ["هلو", "peach"], ["آناناس", "pineapple"], ["بلوبری", "blueberries"],
+        ["گردو", "walnuts"], ["بادام هندی", "cashews"], ["بادام", "almonds"], ["پسته", "pistachios"], ["فندق", "hazelnuts"], ["کنجد", "sesame"], ["تخم کتان", "flaxseed"], ["دانه چیا", "chia seeds"],
+        ["شکر", "sugar"], ["عسل", "honey"], ["شکلات تلخ", "dark chocolate"], ["شکلات شیری", "milk chocolate"], ["سس مایونز", "mayonnaise"], ["سس خردل", "mustard"], ["سس باربیکیو", "barbecue sauce"], ["سس سویا", "soy sauce"],
+        ["نمک", "salt"], ["زردچوبه", "turmeric"], ["فلفل سیاه", "black pepper"], ["دارچین", "cinnamon"], ["زنجبیل", "ginger"], ["آبلیمو", "lemon juice"], ["سرکه", "vinegar"], ["آب", "water"],
+        ["خام", "raw"], ["پخته", "cooked"], ["خشک", "dry"], ["تازه", "fresh"], ["کم‌چرب", "low-fat"], ["بدون پوست", "skinless"], ["کامل", "whole"], ["ساده", "plain"], ["فنلاندی", "Finnish"]
+      ],
+      fi: [
+        ["سینه مرغ", "kananrinta"], ["ران مرغ", "kanankoipi"], ["مرغ", "kana"], ["گوشت گوساله", "naudanliha"], ["گوشت گوسفند", "lampaanliha"], ["گوشت بوقلمون", "kalkkuna"], ["گوشت خوک", "sianliha"],
+        ["ماهی سالمون", "lohi"], ["ماهی قزل‌آلا", "kirjolohi"], ["ماهی تن", "tonnikala"], ["ساردین", "sardiini"], ["میگو", "katkarapu"], ["تخم‌مرغ", "kananmuna"], ["سفیده", "valkuainen"], ["زرده", "keltuainen"],
+        ["برنج سفید", "valkoinen riisi"], ["برنج قهوه‌ای", "täysjyväriisi"], ["برنج باسماتی", "basmatiriisi"], ["برنج", "riisi"], ["جو دوسر", "kaura"], ["گندم", "vehnä"], ["جو", "ohra"], ["آرد", "jauho"], ["پاستا", "pasta"], ["ماکارونی", "makaroni"],
+        ["عدس", "linssit"], ["لوبیا چیتی", "pintopavut"], ["لوبیا قرمز", "kidneypavut"], ["لوبیا سفید", "valkoiset pavut"], ["نخود", "kikherneet"], ["لپه", "halkaistut herneet"], ["ماش", "mungpavut"], ["سویا", "soija"],
+        ["روغن زیتون", "oliiviöljy"], ["روغن آفتابگردان", "auringonkukkaöljy"], ["روغن کنجد", "seesamiöljy"], ["روغن نارگیل", "kookosöljy"], ["کره بادام‌زمینی", "maapähkinävoi"], ["کره", "voi"],
+        ["شیر کم‌چرب", "kevytmaito"], ["شیر پرچرب", "täysmaito"], ["شیر جو دوسر", "kauramaito"], ["شیر سویا", "soijamaito"], ["ماست یونانی", "kreikkalainen jogurtti"], ["ماست", "jogurtti"], ["پنیر", "juusto"], ["خامه", "kerma"],
+        ["سیب‌زمینی", "peruna"], ["گوجه‌فرنگی", "tomaatti"], ["رب گوجه‌فرنگی", "tomaattipyree"], ["خیار", "kurkku"], ["هویج", "porkkana"], ["پیاز", "sipuli"], ["سیر", "valkosipuli"], ["فلفل دلمه‌ای", "paprika"],
+        ["کاهو", "salaatti"], ["کلم", "kaali"], ["بروکلی", "parsakaali"], ["اسفناج", "pinaatti"], ["قارچ", "sieni"], ["بادمجان", "munakoiso"], ["کدو", "kesäkurpitsa"], ["جعفری", "persilja"], ["نعناع", "minttu"],
+        ["سیب", "omena"], ["موز", "banaani"], ["پرتقال", "appelsiini"], ["لیموترش", "limetti"], ["انگور", "viinirypäleet"], ["کیوی", "kiivi"], ["گلابی", "päärynä"], ["هلو", "persikka"], ["آناناس", "ananas"], ["بلوبری", "mustikat"],
+        ["گردو", "saksanpähkinät"], ["بادام هندی", "cashewpähkinät"], ["بادام", "mantelit"], ["پسته", "pistaasit"], ["فندق", "hasselpähkinät"], ["کنجد", "seesami"], ["تخم کتان", "pellavansiemen"], ["دانه چیا", "chiansiemenet"],
+        ["شکر", "sokeri"], ["عسل", "hunaja"], ["شکلات تلخ", "tumma suklaa"], ["شکلات شیری", "maitosuklaa"], ["سس مایونز", "majoneesi"], ["سس خردل", "sinappi"], ["سس باربیکیو", "barbecue-kastike"], ["سس سویا", "soijakastike"],
+        ["نمک", "suola"], ["زردچوبه", "kurkuma"], ["فلفل سیاه", "mustapippuri"], ["دارچین", "kaneli"], ["زنجبیل", "inkivääri"], ["آبلیمو", "sitruunamehu"], ["سرکه", "etikka"], ["آب", "vesi"],
+        ["خام", "raaka"], ["پخته", "kypsä"], ["خشک", "kuiva"], ["تازه", "tuore"], ["کم‌چرب", "vähärasvainen"], ["بدون پوست", "nahaton"], ["کامل", "kokonainen"], ["ساده", "maustamaton"], ["فنلاندی", "suomalainen"]
+      ]
+    };
+
+    function translatedName(item) {
+      if (!item || isCustomFood(item.id) || isCustomIngredient(item.id)) return item?.name || "";
+      if (lang() === "fa") return item.name;
+      let out = item.name;
+      for (const [fa, local] of NAME_REPLACEMENTS[lang()] || []) out = out.split(fa).join(local);
+      return out === item.name ? item.name : out;
+    }
+
+    function nameMatches(item, query) {
+      if (!query) return true;
+      const q = query.toLowerCase();
+      return String(item.id) === query || (item.name || "").toLowerCase().includes(q) || translatedName(item).toLowerCase().includes(q);
+    }
+
     function page(shell) {
       root.innerHTML = `<div class="app">${shell}</div>`;
+      applyLanguage();
     }
 
     function topbar(extra = "") {
       return `<div class="topbar">
         <div class="brand">Fit <span>Calendar</span></div>
         <div class="userbar">
-          ${state.user ? `<span class="pill">${state.user.email}</span><button class="secondary" onclick="logout()">خروج</button>` : ""}
+          ${languageSelect()}
+          ${state.user ? `<span class="pill">${state.user.email}</span><button class="secondary" onclick="logout()">${t("logout")}</button>` : ""}
           ${extra}
         </div>
       </div>`;
@@ -818,6 +1167,7 @@
       root.innerHTML = `<div class="auth">
         <section class="card hero">
           <div>
+            <div class="userbar" style="justify-content:flex-end">${languageSelect()}</div>
             <div class="brand">Fit <span>Calendar</span></div>
             <h1>دفترچه هوشمند رژیم و پیشرفت</h1>
             <p class="muted">اول مشخصات بدن را می‌گیرد، گزارش و هدف امن پیشنهاد می‌دهد، بعد لاگ روزانه غذا، آب، قدم، ورزش و وزن را با نمودارهای هدف و عملکرد نشان می‌دهد.</p>
@@ -840,7 +1190,6 @@
           <h2>ورود یا ساخت حساب</h2>
           <p class="muted">ثبت‌نام واقعی است؛ اطلاعات هر کاربر خصوصی و جدا در اکانت خودش ذخیره می‌شود.</p>
           <label>ایمیل</label><input id="email" type="email" placeholder="name@example.com">
-          <label>یوزرنیم</label><input id="username" placeholder="مثلاً vahid">
           <label>پسورد</label><input id="password" type="password" placeholder="حداقل ۶ کاراکتر">
           <div class="grid" style="margin-top:12px">
             <button onclick="signup()">ساخت حساب</button>
@@ -849,6 +1198,7 @@
           <p id="authMessage" class="notice hidden"></p>
         </section>
       </div>`;
+      applyLanguage();
     }
 
     function setAuthMessage(text, ok = false) {
@@ -859,17 +1209,16 @@
 
     async function signup() {
       const email = $("#email").value.trim();
-      const username = $("#username").value.trim();
       const password = $("#password").value;
-      if (!email.includes("@") || username.length < 2 || password.length < 6) {
-        setAuthMessage("ایمیل، یوزرنیم و پسورد حداقل ۶ کاراکتری را کامل وارد کن.");
+      if (!email.includes("@") || password.length < 6) {
+        setAuthMessage(lang() === "en" ? "Enter a valid email and a password with at least 6 characters." : lang() === "fi" ? "Anna kelvollinen sähköposti ja vähintään 6 merkin salasana." : "ایمیل و پسورد حداقل ۶ کاراکتری را کامل وارد کن.");
         return;
       }
-      setAuthMessage("در حال ساخت حساب...", true);
+      setAuthMessage(lang() === "en" ? "Creating account..." : lang() === "fi" ? "Luodaan tiliä..." : "در حال ساخت حساب...", true);
       const { data, error } = await db.auth.signUp({
         email,
         password,
-        options: { data: { username }, emailRedirectTo: location.origin }
+        options: { emailRedirectTo: location.origin }
       });
       if (error) {
         setAuthMessage(error.message);
@@ -879,7 +1228,7 @@
         await loadUserState(data.session.user);
         showProfile();
       } else {
-        setAuthMessage("حساب ساخته شد. اگر Supabase تایید ایمیل را فعال کرده باشد، ایمیلت را تایید کن و بعد وارد شو.", true);
+        setAuthMessage(lang() === "en" ? "Account created. If email confirmation is enabled, confirm your email and then log in." : lang() === "fi" ? "Tili luotu. Jos sähköpostivahvistus on käytössä, vahvista sähköposti ja kirjaudu sitten." : "حساب ساخته شد. اگر Supabase تایید ایمیل را فعال کرده باشد، ایمیلت را تایید کن و بعد وارد شو.", true);
       }
     }
 
@@ -887,13 +1236,13 @@
       const email = $("#email").value.trim();
       const password = $("#password").value;
       if (!email.includes("@") || password.length < 6) {
-        setAuthMessage("برای ورود ایمیل و پسورد را وارد کن.");
+        setAuthMessage(lang() === "en" ? "Enter your email and password." : lang() === "fi" ? "Anna sähköposti ja salasana." : "برای ورود ایمیل و پسورد را وارد کن.");
         return;
       }
-      setAuthMessage("در حال ورود...", true);
+      setAuthMessage(lang() === "en" ? "Logging in..." : lang() === "fi" ? "Kirjaudutaan..." : "در حال ورود...", true);
       const { data, error } = await db.auth.signInWithPassword({ email, password });
       if (error) {
-        setAuthMessage("ورود ناموفق بود. ایمیل/پسورد یا تایید ایمیل را چک کن.");
+        setAuthMessage(lang() === "en" ? "Login failed. Check email/password or email confirmation." : lang() === "fi" ? "Kirjautuminen epäonnistui. Tarkista sähköposti/salasana tai vahvistus." : "ورود ناموفق بود. ایمیل/پسورد یا تایید ایمیل را چک کن.");
         return;
       }
       await loadUserState(data.user);
@@ -1153,7 +1502,7 @@
       const t = totals(log);
       const plan = currentPlanFor(state.currentDate);
       const weightValue = displayWeightFor(state.currentDate);
-      page(`${topbar(`<button class="ghost" onclick="showProfile()">اصلاح پروفایل</button>`)}${steps(5)}
+      page(`${topbar(`<button class="ghost" onclick="showProfile()">${lang() === "fa" ? "اصلاح پروفایل" : lang() === "fi" ? "Muokkaa profiilia" : "Edit profile"}</button>`)}${steps(5)}
         <div id="dailyMetrics" class="metrics-board">${dailyMetrics()}</div>
         <div class="workspace" style="margin-top:16px">
           <aside class="card">
@@ -1219,14 +1568,14 @@
       const t = totals(log);
       const plan = currentPlanFor(state.currentDate);
       return [
-        metric("کالری", t.cal, plan.calories, "kcal"),
-        metric("پروتئین", t.protein, plan.protein, "g"),
-        metric("چربی", t.fat, plan.fat, "g"),
-        metric("کربوهیدرات", t.carbs, plan.carbs, "g"),
-        metric("فیبر", t.fiber, plan.fiber, "g"),
-        metric("آب", log.water, plan.waterGlasses, "لیوان"),
-        metric("قدم", log.steps, plan.steps, ""),
-        metric("ورزش", log.exercise, plan.exercise, "دقیقه")
+        metric("calories", t.cal, plan.calories, "kcal"),
+        metric("protein", t.protein, plan.protein, "g"),
+        metric("fat", t.fat, plan.fat, "g"),
+        metric("carbs", t.carbs, plan.carbs, "g"),
+        metric("fiber", t.fiber, plan.fiber, "g"),
+        metric("water", log.water, plan.waterGlasses, lang() === "fa" ? "لیوان" : lang() === "fi" ? "lasia" : "glasses"),
+        metric("steps", log.steps, plan.steps, ""),
+        metric("exercise", log.exercise, plan.exercise, lang() === "fa" ? "دقیقه" : lang() === "fi" ? "min" : "min")
       ].join("");
     }
 
@@ -1235,9 +1584,9 @@
       if (board) board.innerHTML = dailyMetrics();
     }
 
-    function metric(label, actual, target, unit) {
+    function metric(labelKey, actual, target, unit) {
       const ratio = target ? actual / target : 0;
-      const isCalories = label === "کالری";
+      const isCalories = labelKey === "calories";
       const isOver = ratio > 1;
       const cls = isOver ? "over" : (isCalories
         ? (ratio > 1.05 ? "bad" : ratio >= .85 ? "good" : "warn")
@@ -1248,12 +1597,12 @@
       const ringBg = isOver
         ? `conic-gradient(var(--red) 0 ${overPercent}%, var(--green) ${overPercent}% 100%)`
         : `conic-gradient(var(--status) ${percent}%, #e9eee5 0)`;
-      const digits = label === "قدم" || label === "ورزش" || label === "آب" ? 0 : 1;
+      const digits = ["steps", "exercise", "water"].includes(labelKey) ? 0 : 1;
       return `<div class="metric summary ${cls}">
         <div>
-          <small>${label}</small>
+          <small>${t(labelKey)}</small>
           <b>${f(actual, digits)} ${unit}</b>
-          <span class="tiny">هدف: ${f(target, 0)} ${unit}</span>
+          <span class="tiny">${t("target")}: ${f(target, 0)} ${unit}</span>
         </div>
         <div class="metric-ring" style="--p:${percent}%;--ring-bg:${ringBg}"><span>${shownPercent}</span></div>
       </div>`;
@@ -1400,12 +1749,12 @@
 
     function unitOptions(selected) {
       const active = isKnownUnit(selected) ? selected : "۱۰۰ گرم";
-      return knownUnits().map(unit => `<option value="${unit}" ${unit === active ? "selected" : ""}>${unit}</option>`).join("");
+      return knownUnits().map(unit => `<option value="${unit}" ${unit === active ? "selected" : ""}>${unitText(unit)}</option>`).join("");
     }
 
     function foodTabs() {
       const active = state.foodTab || "all";
-      return foodCategories.map(([key, label]) => `<button class="${active === key ? "active" : ""}" onclick="setFoodTab('${key}')">${label}</button>`).join("");
+      return foodCategories.map(([key]) => `<button class="${active === key ? "active" : ""}" onclick="setFoodTab('${key}')">${categoryText(key)}</button>`).join("");
     }
 
     function setFoodTab(key) {
@@ -1420,7 +1769,7 @@
       const q = ($("#foodSearch")?.value || "").trim();
       const active = state.foodTab || "all";
       const list = foods.filter(food => {
-        const matchesSearch = !q || food.name.includes(q) || String(food.id) === q;
+        const matchesSearch = nameMatches(food, q);
         const matchesTab = active === "all" || (active === "custom" ? isCustomFood(food.id) : getFoodCategory(food) === active);
         return matchesSearch && matchesTab;
       }).slice(0, 120);
@@ -1429,17 +1778,17 @@
         return;
       }
       $("#foodList").innerHTML = list.map(food => `<div class="food-card" draggable="true" ondragstart="dragFood(event, ${food.id})" onclick="addFood(${food.id})">
-        <b>${food.id}. ${esc(food.name)}</b>
-        <small>${categoryLabel(getFoodCategory(food))} | واحد: ${foodUnit(food)} | ${food.cal} kcal | پروتئین ${food.protein}g | فیبر ${food.fiber}g</small>
+        <b>${food.id}. ${esc(translatedName(food))}</b>
+        <small>${categoryLabel(getFoodCategory(food))} | ${t("unit")}: ${unitText(foodUnit(food))} | ${food.cal} kcal | ${t("protein")} ${food.protein}g | ${t("fiber")} ${food.fiber}g</small>
         <div class="food-actions">
-          <button class="ghost" onclick="event.stopPropagation(); openFoodModal(${food.id})">ویرایش</button>
-          ${isCustomFood(food.id) ? `<button class="danger" onclick="event.stopPropagation(); deleteFood(${food.id})">حذف</button>` : ""}
+          <button class="ghost" onclick="event.stopPropagation(); openFoodModal(${food.id})">${t("edit")}</button>
+          ${isCustomFood(food.id) ? `<button class="danger" onclick="event.stopPropagation(); deleteFood(${food.id})">${t("delete")}</button>` : ""}
         </div>
       </div>`).join("");
     }
 
     function categoryLabel(key) {
-      return foodCategories.find(([id]) => id === key)?.[1] || "غذا";
+      return categoryText(key);
     }
 
     function dragFood(event, id) {
@@ -1471,21 +1820,21 @@
         return;
       }
       $("#entries").innerHTML = `<table>
-        <tr><th>غذا</th><th>تعداد</th><th>واحد</th><th>کالری</th><th>پروتئین</th><th>چربی</th><th>کربوهیدرات</th><th>فیبر</th><th></th></tr>
+        <tr><th>${lang() === "fa" ? "غذا" : lang() === "fi" ? "Ruoka" : "Food"}</th><th>${t("amount")}</th><th>${t("unit")}</th><th>${t("calories")}</th><th>${t("protein")}</th><th>${t("fat")}</th><th>${t("carbs")}</th><th>${t("fiber")}</th><th></th></tr>
         ${log.entries.map((entry, index) => {
           const food = foods.find(x => x.id === entry.foodId);
           if (!food) return "";
           const u = Number(entry.units || 0);
           return `<tr>
-            <td>${food.id}. ${esc(food.name)}</td>
+            <td>${food.id}. ${esc(translatedName(food))}</td>
             <td><input type="number" step="0.1" value="${u}" onchange="setUnits(${index}, this.value)"></td>
-            <td>${esc(foodUnit(food))}</td>
+            <td>${esc(unitText(foodUnit(food)))}</td>
             <td>${f(food.cal * u, 1)}</td>
             <td>${f(food.protein * u, 1)}</td>
             <td>${f(food.fat * u, 1)}</td>
             <td>${f(food.carbs * u, 1)}</td>
             <td>${f(food.fiber * u, 1)}</td>
-            <td><button class="danger" onclick="removeEntry(${index})">حذف</button></td>
+            <td><button class="danger" onclick="removeEntry(${index})">${t("delete")}</button></td>
           </tr>`;
         }).join("")}
       </table>`;
@@ -1576,14 +1925,14 @@
 
     function chartDefinitions() {
       return [
-        ["cal", "کالری", "cal", "calories"],
-        ["protein", "پروتئین", "protein", "protein"],
-        ["fat", "چربی", "fat", "fat"],
-        ["carbs", "کربوهیدرات", "carbs", "carbs"],
-        ["fiber", "فیبر", "fiber", "fiber"],
-        ["water", "آب", "water", "waterGlasses"],
-        ["steps", "قدم", "steps", "steps"],
-        ["weight", "وزن", "weight", null]
+        ["cal", t("calories"), "cal", "calories"],
+        ["protein", t("protein"), "protein", "protein"],
+        ["fat", t("fat"), "fat", "fat"],
+        ["carbs", t("carbs"), "carbs", "carbs"],
+        ["fiber", t("fiber"), "fiber", "fiber"],
+        ["water", t("water"), "water", "waterGlasses"],
+        ["steps", t("steps"), "steps", "steps"],
+        ["weight", t("weight"), "weight", null]
       ];
     }
 
@@ -1713,27 +2062,27 @@
       const food = foodId ? foods.find(item => item.id === foodId) : null;
       document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="foodModal">
         <div class="modal">
-          <h2>${food ? "ویرایش غذا" : "افزودن غذای جدید به دیتابیس"}</h2>
+          <h2>${food ? t("edit") : t("addFood")}</h2>
           <p class="muted">${food ? "مقدارهای این غذا را به ازای واحد انتخابی اصلاح کن." : "واحد غذا را انتخاب کن و مقدارها را برای همان واحد وارد کن. شماره غذا خودکار ساخته می‌شود."}</p>
           <input id="editingFoodId" type="hidden" value="${food?.id || ""}">
           <div class="grid-3">
-            <div><label>نام غذا</label><input id="newFoodName" value="${esc(food?.name || "")}"></div>
-            <div><label>دسته</label><select id="newFoodCategory">
-              ${foodCategories.filter(([key]) => key !== "all" && key !== "custom").map(([key, label]) => `<option value="${key}" ${getFoodCategory(food || { id: 0, name: "" }) === key ? "selected" : ""}>${label}</option>`).join("")}
+            <div><label>${t("name")}</label><input id="newFoodName" value="${esc(food?.name || "")}"></div>
+            <div><label>${t("category")}</label><select id="newFoodCategory">
+              ${foodCategories.filter(([key]) => key !== "all" && key !== "custom").map(([key]) => `<option value="${key}" ${getFoodCategory(food || { id: 0, name: "" }) === key ? "selected" : ""}>${categoryText(key)}</option>`).join("")}
             </select></div>
-            <div><label>واحد</label><select id="newFoodUnit">${unitOptions(foodUnit(food))}</select></div>
-            <div><label>واحد دلخواه</label><input id="newFoodCustomUnit" placeholder="مثلاً ۱ کفگیر" value="${isKnownUnit(foodUnit(food)) ? "" : esc(foodUnit(food))}"></div>
-            <div><label>کالری در هر واحد</label><input id="newFoodCal" type="number" value="${food?.cal || ""}"></div>
-            <div><label>پروتئین در هر واحد (g)</label><input id="newFoodProtein" type="number" step="0.1" value="${food?.protein || ""}"></div>
-            <div><label>چربی در هر واحد (g)</label><input id="newFoodFat" type="number" step="0.1" value="${food?.fat || ""}"></div>
-            <div><label>کربوهیدرات در هر واحد (g)</label><input id="newFoodCarbs" type="number" step="0.1" value="${food?.carbs || ""}"></div>
-            <div><label>فیبر در هر واحد (g)</label><input id="newFoodFiber" type="number" step="0.1" value="${food?.fiber || ""}"></div>
-            <div><label>آب در هر واحد (g/ml)</label><input id="newFoodWater" type="number" step="0.1" value="${food?.water || ""}"></div>
+            <div><label>${t("unit")}</label><select id="newFoodUnit">${unitOptions(foodUnit(food))}</select></div>
+            <div><label>${t("customUnit")}</label><input id="newFoodCustomUnit" placeholder="${unitText("۱ کفگیر")}" value="${isKnownUnit(foodUnit(food)) ? "" : esc(foodUnit(food))}"></div>
+            <div><label>${t("calories")}</label><input id="newFoodCal" type="number" value="${food?.cal || ""}"></div>
+            <div><label>${t("protein")} (g)</label><input id="newFoodProtein" type="number" step="0.1" value="${food?.protein || ""}"></div>
+            <div><label>${t("fat")} (g)</label><input id="newFoodFat" type="number" step="0.1" value="${food?.fat || ""}"></div>
+            <div><label>${t("carbs")} (g)</label><input id="newFoodCarbs" type="number" step="0.1" value="${food?.carbs || ""}"></div>
+            <div><label>${t("fiber")} (g)</label><input id="newFoodFiber" type="number" step="0.1" value="${food?.fiber || ""}"></div>
+            <div><label>${t("water")} (g/ml)</label><input id="newFoodWater" type="number" step="0.1" value="${food?.water || ""}"></div>
           </div>
           <div class="grid" style="margin-top:14px">
-            <button onclick="saveFood()">${food ? "ذخیره تغییرات" : "افزودن به لیست"}</button>
-            ${food?.recipe ? `<button class="ghost" onclick="closeFoodModal(); openRecipeModal(${food.id})">ویرایش رسپی آشپزی</button>` : ""}
-            <button class="secondary" onclick="closeFoodModal()">انصراف</button>
+            <button onclick="saveFood()">${food ? t("save") : t("addFood")}</button>
+            ${food?.recipe ? `<button class="ghost" onclick="closeFoodModal(); openRecipeModal(${food.id})">${t("recipe")}</button>` : ""}
+            <button class="secondary" onclick="closeFoodModal()">${t("cancel")}</button>
           </div>
         </div>
       </div>`);
@@ -1800,12 +2149,12 @@
     }
 
     function ingredientCategoryLabel(key) {
-      return ingredientCategories.find(([id]) => id === key)?.[1] || "مواد اولیه";
+      return categoryText(key, "ingredient");
     }
 
     function ingredientTabs() {
       const active = state.ingredientTab || "all";
-      return ingredientCategories.map(([key, label]) => `<button class="${active === key ? "active" : ""}" onclick="setIngredientTab('${key}')">${label}</button>`).join("");
+      return ingredientCategories.map(([key]) => `<button class="${active === key ? "active" : ""}" onclick="setIngredientTab('${key}')">${categoryText(key, "ingredient")}</button>`).join("");
     }
 
     function setIngredientTab(key) {
@@ -1821,8 +2170,8 @@
       if (!item) return "";
       return `<div class="recipe-row" data-ingredient-id="${item.id}">
         <div>
-          <b>${esc(item.name)}</b>
-          <small class="tiny">واحد: ${esc(item.unit)} | ${item.cal} kcal | پروتئین ${item.protein}g | فیبر ${item.fiber}g</small>
+          <b>${esc(translatedName(item))}</b>
+          <small class="tiny">${t("unit")}: ${esc(unitText(item.unit))} | ${item.cal} kcal | ${t("protein")} ${item.protein}g | ${t("fiber")} ${item.fiber}g</small>
         </div>
         <div><label>تعداد واحد</label><input class="recipeAmount" type="number" min="0" step="0.1" value="${amount}" oninput="updateRecipePreview()"></div>
         <button class="danger" onclick="removeRecipeRow(this)">×</button>
@@ -1838,28 +2187,28 @@
         : `${recipeRowHtml(1, 3)}${recipeRowHtml(14, 2)}${recipeRowHtml(33, 1)}`;
       document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="recipeModal">
         <div class="modal wide">
-          <h2>${editingFood ? "ویرایش رسپی آشپزی" : "آشپزی و ساخت غذای جدید"}</h2>
+          <h2>${editingFood ? t("recipe") : t("cooking")}</h2>
           <p class="muted">مواد اولیه را از پنل انتخاب کن یا بکش داخل دستور پخت. بعد مقدار هر ماده و تعداد واحد خروجی غذا را وارد کن تا ارزش غذایی هر واحد محاسبه شود.</p>
           <input id="editingRecipeFoodId" type="hidden" value="${editingFood?.id || ""}">
           <div class="grid-3">
-            <div><label>نام غذای پخته‌شده</label><input id="recipeFoodName" placeholder="مثلاً قورمه سبزی خانگی" value="${esc(editingFood?.name || "")}"></div>
-            <div><label>واحد غذای نهایی</label><select id="recipeFoodUnit" onchange="updateRecipePreview()">${unitOptions(recipeUnit)}</select></div>
-            <div><label>واحد دلخواه</label><input id="recipeCustomUnit" placeholder="مثلاً ۱ کاسه بزرگ" value="${isKnownUnit(recipeUnit) ? "" : esc(recipeUnit)}" oninput="updateRecipePreview()"></div>
-            <div><label>کل غذا چند واحد شد؟</label><input id="recipeYield" type="number" min="0.1" step="0.1" value="${recipe?.servings || 1}" oninput="updateRecipePreview()"></div>
+            <div><label>${t("name")}</label><input id="recipeFoodName" placeholder="${lang() === "fa" ? "مثلاً قورمه سبزی خانگی" : lang() === "fi" ? "esim. kotitekoinen keitto" : "e.g. homemade stew"}" value="${esc(editingFood?.name || "")}"></div>
+            <div><label>${t("unit")}</label><select id="recipeFoodUnit" onchange="updateRecipePreview()">${unitOptions(recipeUnit)}</select></div>
+            <div><label>${t("customUnit")}</label><input id="recipeCustomUnit" placeholder="${unitText("۱ کاسه")}" value="${isKnownUnit(recipeUnit) ? "" : esc(recipeUnit)}" oninput="updateRecipePreview()"></div>
+            <div><label>${lang() === "fa" ? "کل غذا چند واحد شد؟" : lang() === "fi" ? "Montako annosta valmistui?" : "How many servings did it make?"}</label><input id="recipeYield" type="number" min="0.1" step="0.1" value="${recipe?.servings || 1}" oninput="updateRecipePreview()"></div>
           </div>
           <div class="recipe-builder" style="margin-top:16px">
             <aside class="flat card">
-              <h3>مواد اولیه</h3>
-              <label>جستجو</label><input id="ingredientSearch" oninput="renderIngredients()" placeholder="مثلاً مرغ خام، برنج، روغن">
+              <h3>${t("ingredients")}</h3>
+              <label>${t("search")}</label><input id="ingredientSearch" oninput="renderIngredients()" placeholder="${lang() === "fa" ? "مثلاً مرغ خام، برنج، روغن" : lang() === "fi" ? "esim. kana, riisi, öljy" : "e.g. chicken, rice, oil"}">
               <div class="food-buttons">
-                <button class="secondary" onclick="openIngredientModal()">افزودن ماده خام</button>
-                <button class="ghost" onclick="renderIngredients()">به‌روزرسانی</button>
+                <button class="secondary" onclick="openIngredientModal()">${lang() === "fa" ? "افزودن ماده خام" : lang() === "fi" ? "Lisää raaka-aine" : "Add ingredient"}</button>
+                <button class="ghost" onclick="renderIngredients()">${lang() === "fa" ? "به‌روزرسانی" : lang() === "fi" ? "Päivitä" : "Refresh"}</button>
               </div>
               <div id="ingredientTabs" class="food-tabs">${ingredientTabs()}</div>
               <div id="ingredientList" class="ingredient-list" style="margin-top:12px"></div>
             </aside>
             <section>
-              <h3>دستور پخت</h3>
+              <h3>${t("recipe")}</h3>
               <div id="recipeDropzone" class="dropzone">ماده اولیه را اینجا رها کن یا از پنل کلیک کن</div>
               <div id="recipeRows">
                 ${recipeRows}
@@ -1868,8 +2217,8 @@
             </section>
           </div>
           <div class="grid" style="margin-top:14px">
-            <button onclick="saveRecipeFood()">${editingFood ? "ذخیره تغییرات رسپی" : "ذخیره به غذاهای من"}</button>
-            <button class="secondary" onclick="closeRecipeModal()">انصراف</button>
+            <button onclick="saveRecipeFood()">${editingFood ? t("save") : (lang() === "fa" ? "ذخیره به غذاهای من" : lang() === "fi" ? "Tallenna omiin ruokiin" : "Save to my foods")}</button>
+            <button class="secondary" onclick="closeRecipeModal()">${t("cancel")}</button>
           </div>
         </div>
       </div>`);
@@ -1889,7 +2238,7 @@
       const q = ($("#ingredientSearch")?.value || "").trim();
       const active = state.ingredientTab || "all";
       const list = rawIngredients.filter(item => {
-        const matchesSearch = !q || item.name.includes(q) || String(item.id) === q;
+        const matchesSearch = nameMatches(item, q);
         const matchesTab = active === "all" || (active === "custom" ? isCustomIngredient(item.id) : item.category === active);
         return matchesSearch && matchesTab;
       }).slice(0, 180);
@@ -1898,11 +2247,11 @@
         return;
       }
       listBox.innerHTML = list.map(item => `<div class="ingredient-card" draggable="true" ondragstart="dragIngredient(event, ${item.id})" onclick="addIngredientToRecipe(${item.id})">
-        <b>${item.id}. ${esc(item.name)}</b>
-        <small>${ingredientCategoryLabel(item.category)} | واحد: ${esc(item.unit)} | ${item.cal} kcal | پروتئین ${item.protein}g</small>
+        <b>${item.id}. ${esc(translatedName(item))}</b>
+        <small>${ingredientCategoryLabel(item.category)} | ${t("unit")}: ${esc(unitText(item.unit))} | ${item.cal} kcal | ${t("protein")} ${item.protein}g</small>
         <div class="food-actions">
-          <button class="ghost" onclick="event.stopPropagation(); openIngredientModal(${item.id})">ویرایش</button>
-          ${isCustomIngredient(item.id) ? `<button class="danger" onclick="event.stopPropagation(); deleteIngredient(${item.id})">حذف</button>` : ""}
+          <button class="ghost" onclick="event.stopPropagation(); openIngredientModal(${item.id})">${t("edit")}</button>
+          ${isCustomIngredient(item.id) ? `<button class="danger" onclick="event.stopPropagation(); deleteIngredient(${item.id})">${t("delete")}</button>` : ""}
         </div>
       </div>`).join("");
     }
@@ -1969,14 +2318,14 @@
       const { perUnit, servings } = calculateRecipe();
       const unit = $("#recipeCustomUnit")?.value.trim() || $("#recipeFoodUnit")?.value || "۱ پرس";
       box.innerHTML = [
-        ["کالری", perUnit.cal, "kcal"],
-        ["پروتئین", perUnit.protein, "g"],
-        ["چربی", perUnit.fat, "g"],
-        ["کربوهیدرات", perUnit.carbs, "g"],
-        ["فیبر", perUnit.fiber, "g"],
-        ["آب", perUnit.water, "g/ml"]
-      ].map(([label, value, suffix]) => `<div><small>${label} در هر ${esc(unit)}</small><b>${f(value, 1)} ${suffix}</b></div>`).join("") +
-        `<div><small>خروجی کل غذا</small><b>${f(servings, 1)} ${esc(unit)}</b></div>`;
+        [t("calories"), perUnit.cal, "kcal"],
+        [t("protein"), perUnit.protein, "g"],
+        [t("fat"), perUnit.fat, "g"],
+        [t("carbs"), perUnit.carbs, "g"],
+        [t("fiber"), perUnit.fiber, "g"],
+        [t("water"), perUnit.water, "g/ml"]
+      ].map(([label, value, suffix]) => `<div><small>${label} ${lang() === "fa" ? "در هر" : lang() === "fi" ? "/ " : "per"} ${esc(unitText(unit))}</small><b>${f(value, 1)} ${suffix}</b></div>`).join("") +
+        `<div><small>${lang() === "fa" ? "خروجی کل غذا" : lang() === "fi" ? "Kokonaismäärä" : "Total yield"}</small><b>${f(servings, 1)} ${esc(unitText(unit))}</b></div>`;
     }
 
     function saveRecipeFood() {
@@ -2015,26 +2364,26 @@
       const item = ingredientId ? rawIngredients.find(x => x.id === ingredientId) : null;
       document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="ingredientModal">
         <div class="modal">
-          <h2>${item ? "ویرایش ماده اولیه" : "افزودن ماده اولیه جدید"}</h2>
+          <h2>${item ? t("edit") : (lang() === "fa" ? "افزودن ماده اولیه جدید" : lang() === "fi" ? "Lisää uusi raaka-aine" : "Add new ingredient")}</h2>
           <p class="muted">${item ? "این تغییر فقط برای حساب خودت ذخیره می‌شود." : "واحد ماده را انتخاب کن و مقدارها را برای همان واحد وارد کن."}</p>
           <input id="editingIngredientId" type="hidden" value="${item?.id || ""}">
           <div class="grid-3">
-            <div><label>نام ماده اولیه</label><input id="newIngredientName" value="${esc(item?.name || "")}"></div>
-            <div><label>دسته</label><select id="newIngredientCategory">
-              ${ingredientCategories.filter(([key]) => key !== "all" && key !== "custom").map(([key, label]) => `<option value="${key}" ${((item?.category || "protein") === key) ? "selected" : ""}>${label}</option>`).join("")}
+            <div><label>${t("name")}</label><input id="newIngredientName" value="${esc(item?.name || "")}"></div>
+            <div><label>${t("category")}</label><select id="newIngredientCategory">
+              ${ingredientCategories.filter(([key]) => key !== "all" && key !== "custom").map(([key]) => `<option value="${key}" ${((item?.category || "protein") === key) ? "selected" : ""}>${categoryText(key, "ingredient")}</option>`).join("")}
             </select></div>
-            <div><label>واحد</label><select id="newIngredientUnit">${unitOptions(item?.unit || "۱۰۰ گرم")}</select></div>
-            <div><label>واحد دلخواه</label><input id="newIngredientCustomUnit" placeholder="مثلاً ۳۰ گرم" value="${isKnownUnit(item?.unit) ? "" : esc(item?.unit || "")}"></div>
-            <div><label>کالری در هر واحد</label><input id="newIngredientCal" type="number" value="${item?.cal || ""}"></div>
-            <div><label>پروتئین در هر واحد (g)</label><input id="newIngredientProtein" type="number" step="0.1" value="${item?.protein || ""}"></div>
-            <div><label>چربی در هر واحد (g)</label><input id="newIngredientFat" type="number" step="0.1" value="${item?.fat || ""}"></div>
-            <div><label>کربوهیدرات در هر واحد (g)</label><input id="newIngredientCarbs" type="number" step="0.1" value="${item?.carbs || ""}"></div>
-            <div><label>فیبر در هر واحد (g)</label><input id="newIngredientFiber" type="number" step="0.1" value="${item?.fiber || ""}"></div>
-            <div><label>آب در هر واحد (g/ml)</label><input id="newIngredientWater" type="number" step="0.1" value="${item?.water || ""}"></div>
+            <div><label>${t("unit")}</label><select id="newIngredientUnit">${unitOptions(item?.unit || "۱۰۰ گرم")}</select></div>
+            <div><label>${t("customUnit")}</label><input id="newIngredientCustomUnit" placeholder="${unitText("۳۰ گرم")}" value="${isKnownUnit(item?.unit) ? "" : esc(item?.unit || "")}"></div>
+            <div><label>${t("calories")}</label><input id="newIngredientCal" type="number" value="${item?.cal || ""}"></div>
+            <div><label>${t("protein")} (g)</label><input id="newIngredientProtein" type="number" step="0.1" value="${item?.protein || ""}"></div>
+            <div><label>${t("fat")} (g)</label><input id="newIngredientFat" type="number" step="0.1" value="${item?.fat || ""}"></div>
+            <div><label>${t("carbs")} (g)</label><input id="newIngredientCarbs" type="number" step="0.1" value="${item?.carbs || ""}"></div>
+            <div><label>${t("fiber")} (g)</label><input id="newIngredientFiber" type="number" step="0.1" value="${item?.fiber || ""}"></div>
+            <div><label>${t("water")} (g/ml)</label><input id="newIngredientWater" type="number" step="0.1" value="${item?.water || ""}"></div>
           </div>
           <div class="grid" style="margin-top:14px">
-            <button onclick="saveIngredient()">${item ? "ذخیره تغییرات" : "افزودن ماده اولیه"}</button>
-            <button class="secondary" onclick="closeIngredientModal()">انصراف</button>
+            <button onclick="saveIngredient()">${item ? t("save") : (lang() === "fa" ? "افزودن ماده اولیه" : lang() === "fi" ? "Lisää raaka-aine" : "Add ingredient")}</button>
+            <button class="secondary" onclick="closeIngredientModal()">${t("cancel")}</button>
           </div>
         </div>
       </div>`);
