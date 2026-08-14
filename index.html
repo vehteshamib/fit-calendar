@@ -290,8 +290,8 @@
     .recipe-summary { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 12px; }
     .recipe-summary div { border: 1px solid var(--line); border-radius: 8px; background: white; padding: 9px; }
     .recipe-summary small { display: block; color: var(--muted); margin-bottom: 4px; }
-    .axis-label { fill: #66736d; font-size: 11px; direction: ltr; }
-    .axis-value { fill: #46534b; font-size: 11px; direction: ltr; }
+    .axis-label { fill: #66736d; font-size: 13px; direction: ltr; font-weight: 700; }
+    .axis-value { fill: #46534b; font-size: 13px; direction: ltr; font-weight: 700; }
     .hidden { display: none !important; }
     .visual-stack { display: grid; grid-template-columns: 1.1fr .9fr; gap: 12px; margin-top: 26px; }
     .hero-panel {
@@ -1107,6 +1107,38 @@
       return UI[lang()]?.[key] || UI.fa[key] || key;
     }
 
+    function L(fa, en, fi) {
+      const active = lang();
+      return active === "en" ? en : active === "fi" ? fi : fa;
+    }
+
+    function genderOptions(selected = "male") {
+      return `
+        <option value="male" ${selected === "male" ? "selected" : ""}>${L("مرد", "Male", "Mies")}</option>
+        <option value="female" ${selected === "female" ? "selected" : ""}>${L("زن", "Female", "Nainen")}</option>
+      `;
+    }
+
+    function bmiCategoryLabel(category) {
+      const labels = {
+        fa: { "کم‌وزن": "کم‌وزن", "در بازه نرمال": "در بازه نرمال", "اضافه‌وزن": "اضافه‌وزن", "چاقی": "چاقی" },
+        en: { "کم‌وزن": "Underweight", "در بازه نرمال": "Normal range", "اضافه‌وزن": "Overweight", "چاقی": "Obesity" },
+        fi: { "کم‌وزن": "Alipaino", "در بازه نرمال": "Normaali alue", "اضافه‌وزن": "Ylipaino", "چاقی": "Lihavuus" }
+      };
+      return labels[lang()]?.[category] || category;
+    }
+
+    function unitText(kind) {
+      const units = {
+        kg: L("کیلوگرم", "kg", "kg"),
+        kgMonth: L("کیلوگرم در ماه", "kg/month", "kg/kk"),
+        glass: L("لیوان", "glasses", "lasia"),
+        steps: L("قدم", "steps", "askelta"),
+        minutes: L("دقیقه", "min", "min")
+      };
+      return units[kind] || kind;
+    }
+
     function applyLanguage() {
       const active = lang();
       document.documentElement.lang = active;
@@ -1386,33 +1418,40 @@
       page(`${topbar()}${steps(2)}
         <div class="grid">
           <section class="card">
-            <h2>مشخصات اولیه</h2>
+            <h2>${L("مشخصات اولیه", "Initial Profile", "Perustiedot")}</h2>
             <div class="grid">
-              <div><label>جنسیت</label><select id="gender"><option value="male">مرد</option><option value="female">زن</option></select></div>
-              <div><label>سن</label><input id="age" type="number" value="${state.profile?.age || 30}"></div>
-              <div><label>قد (سانتی‌متر)</label><input id="height" type="number" value="${state.profile?.height || 175}"></div>
-              <div><label>وزن فعلی (کیلوگرم)</label><input id="weight" type="number" step="0.1" value="${state.profile?.weight || 85}"></div>
-              <div><label>میانگین قدم روزانه</label><input id="stepsNow" type="number" value="${state.profile?.stepsNow || state.plan?.steps || 8000}"></div>
-              <div><label>میانگین ورزش روزانه (دقیقه)</label><input id="exerciseNow" type="number" value="${state.profile?.exerciseNow || 20}"></div>
+              <div><label>${L("جنسیت", "Sex", "Sukupuoli")}</label><select id="gender">${genderOptions(state.profile?.gender || "male")}</select></div>
+              <div><label>${L("سن", "Age", "Ikä")}</label><input id="age" type="number" value="${state.profile?.age || 30}"></div>
+              <div><label>${L("قد (سانتی‌متر)", "Height (cm)", "Pituus (cm)")}</label><input id="height" type="number" value="${state.profile?.height || 175}"></div>
+              <div><label>${L("وزن فعلی (کیلوگرم)", "Current weight (kg)", "Nykyinen paino (kg)")}</label><input id="weight" type="number" step="0.1" value="${state.profile?.weight || 85}"></div>
+              <div><label>${L("میانگین قدم روزانه", "Average daily steps", "Keskimääräiset askeleet päivässä")}</label><input id="stepsNow" type="number" value="${state.profile?.stepsNow || state.plan?.steps || 8000}"></div>
+              <div><label>${L("میانگین ورزش روزانه (دقیقه)", "Average daily exercise (min)", "Keskimääräinen liikunta päivässä (min)")}</label><input id="exerciseNow" type="number" value="${state.profile?.exerciseNow || 20}"></div>
             </div>
-            <button style="margin-top:14px" onclick="makeReport()">ساخت گزارش پیشنهادی</button>
+            <button style="margin-top:14px" onclick="makeReport()">${L("ساخت گزارش پیشنهادی", "Create Recommendation Report", "Luo suositusraportti")}</button>
           </section>
           <section class="card">
-            <h2>بعد از این مرحله چه می‌بینی؟</h2>
-            <p class="muted">من BMI، بازه وزن سالم، اضافه‌وزن تقریبی و سرعت امن کاهش وزن را حساب می‌کنم. بعد یک برنامه روزانه شامل کالری، پروتئین، چربی، کربوهیدرات، فیبر، آب، قدم و ورزش پیشنهاد می‌دهم.</p>
-            <div class="notice">هدف کاهش وزن را اول من پیشنهاد می‌دهم. بعد می‌توانی همان را قبول کنی یا مقدارها را دستی اصلاح کنی.</div>
+            <h2>${L("بعد از این مرحله چه می‌بینی؟", "What comes next?", "Mitä seuraavaksi?")}</h2>
+            <p class="muted">${L(
+              "من BMI، بازه وزن سالم، اضافه‌وزن تقریبی و سرعت امن کاهش وزن را حساب می‌کنم. بعد یک برنامه روزانه شامل کالری، پروتئین، چربی، کربوهیدرات، فیبر، آب، قدم و ورزش پیشنهاد می‌دهم.",
+              "I calculate BMI, a healthy weight range, approximate excess weight, and a safe weight-loss pace. Then I suggest daily targets for calories, protein, fat, carbs, fiber, water, steps, and exercise.",
+              "Lasken BMI:n, terveellisen painoalueen, arvioidun ylipainon ja turvallisen laihtumistahdin. Sen jälkeen ehdotan päivittäiset tavoitteet kaloreille, proteiinille, rasvalle, hiilihydraateille, kuidulle, vedelle, askelille ja liikunnalle."
+            )}</p>
+            <div class="notice">${L(
+              "کاهش وزن هدف را اول من پیشنهاد می‌دهم. بعد می‌توانی همان را قبول کنی یا مقدارها را دستی اصلاح کنی.",
+              "I suggest the weight-loss target first. After that, you can accept it or adjust the values yourself.",
+              "Ehdotan ensin painonpudotustavoitteen. Sen jälkeen voit hyväksyä sen tai muokata arvoja itse."
+            )}</div>
           </section>
         </div>`);
-      if (state.profile?.gender) $("#gender").value = state.profile.gender;
     }
 
     function steps(active) {
       const items = [
-        ["ورود", "showAuth()"],
-        ["مشخصات", state.user ? "showProfile()" : ""],
-        ["گزارش", state.profile ? "showReport()" : ""],
-        ["هدف", state.profile ? "showGoalEditor()" : ""],
-        ["لاگ روزانه", currentPlanFor(state.currentDate) ? "showApp()" : ""]
+        [L("ورود", "Login", "Kirjautuminen"), "showAuth()"],
+        [L("مشخصات", "Profile", "Profiili"), state.user ? "showProfile()" : ""],
+        [L("گزارش", "Report", "Raportti"), state.profile ? "showReport()" : ""],
+        [L("هدف", "Goal", "Tavoite"), state.profile ? "showGoalEditor()" : ""],
+        [L("لاگ روزانه", "Daily Log", "Päiväkirja"), currentPlanFor(state.currentDate) ? "showApp()" : ""]
       ];
       return `<div class="stepper">
         ${items.map(([label, action], i) => `<button class="step ${i + 1 === active ? "active" : ""}" ${action ? `onclick="${action}"` : "disabled"}>${label}</button>`).join("")}
@@ -1465,28 +1504,32 @@
       const a = state.analysis || analyze(state.profile);
       page(`${topbar()}${steps(3)}
         <section class="card">
-          <h2>گزارش پیشنهادی من</h2>
+          <h2>${L("گزارش پیشنهادی من", "My Recommendation Report", "Suositusraportti")}</h2>
           <div class="grid-4">
-            <div class="metric ${a.bmi >= 25 ? "warn" : "good"}"><small>BMI</small><b>${f(a.bmi, 1)}</b><span class="tiny">${a.category}</span></div>
-            <div class="metric"><small>بازه وزن سالم</small><b>${f(a.idealLow, 1)} تا ${f(a.idealHigh, 1)}</b><span class="tiny">کیلوگرم</span></div>
-            <div class="metric ${a.extra > 0 ? "warn" : "good"}"><small>اضافه وزن تقریبی</small><b>${f(a.extra, 1)}</b><span class="tiny">نسبت به سقف بازه سالم</span></div>
-            <div class="metric good"><small>کاهش امن پیشنهادی</small><b>${a.safeMonthly ? f(a.safeMonthly, 1) : "۰"}</b><span class="tiny">کیلوگرم در ماه</span></div>
+            <div class="metric ${a.bmi >= 25 ? "warn" : "good"}"><small>BMI</small><b>${f(a.bmi, 1)}</b><span class="tiny">${bmiCategoryLabel(a.category)}</span></div>
+            <div class="metric"><small>${L("بازه وزن سالم", "Healthy weight range", "Terve painoalue")}</small><b>${f(a.idealLow, 1)} ${L("تا", "to", "-")} ${f(a.idealHigh, 1)}</b><span class="tiny">${unitText("kg")}</span></div>
+            <div class="metric ${a.extra > 0 ? "warn" : "good"}"><small>${L("اضافه وزن تقریبی", "Estimated excess weight", "Arvioitu ylipaino")}</small><b>${f(a.extra, 1)}</b><span class="tiny">${L("نسبت به سقف بازه سالم", "above the healthy range", "terveen alueen ylärajan yli")}</span></div>
+            <div class="metric good"><small>${L("کاهش امن پیشنهادی", "Suggested safe loss", "Suositeltu turvallinen pudotus")}</small><b>${a.safeMonthly ? f(a.safeMonthly, 1) : "0"}</b><span class="tiny">${unitText("kgMonth")}</span></div>
           </div>
-          <p class="muted">پیشنهاد من کاهش آرام و قابل‌تداوم است: حدود ${a.safeMonthly ? f(a.safeMonthly, 1) : "۰"} کیلوگرم در ماه. این سرعت معمولاً فشار کمتری به بدن و اشتها وارد می‌کند و برای نگه‌داشتن عضله بهتر است. اگر بیماری زمینه‌ای، دارو، بارداری یا سابقه اختلال خوردن وجود دارد، برنامه باید با پزشک یا متخصص تغذیه هماهنگ شود.</p>
+          <p class="muted">${L(
+            `پیشنهاد من کاهش آرام و قابل‌تداوم است: حدود ${a.safeMonthly ? f(a.safeMonthly, 1) : "0"} کیلوگرم در ماه. این سرعت معمولا فشار کمتری به بدن و اشتها وارد می‌کند و برای نگه‌داشتن عضله بهتر است. اگر بیماری زمینه‌ای، دارو، بارداری یا سابقه اختلال خوردن وجود دارد، برنامه باید با پزشک یا متخصص تغذیه هماهنگ شود.`,
+            `My suggestion is a steady, sustainable pace: about ${a.safeMonthly ? f(a.safeMonthly, 1) : "0"} kg per month. This is usually gentler on the body and appetite, and better for preserving muscle. If there is a medical condition, medication, pregnancy, or a history of disordered eating, the plan should be checked with a doctor or dietitian.`,
+            `Suosittelen rauhallista ja kestävää tahtia: noin ${a.safeMonthly ? f(a.safeMonthly, 1) : "0"} kg kuukaudessa. Tämä kuormittaa yleensä vähemmän kehoa ja ruokahalua sekä auttaa säilyttämään lihasmassaa. Jos taustalla on sairaus, lääkitys, raskaus tai syömishäiriöhistoria, suunnitelma kannattaa varmistaa lääkärin tai ravitsemusterapeutin kanssa.`
+          )}</p>
           <table>
-            <tr><th>پارامتر</th><th>پیشنهاد روزانه</th><th>توضیح</th></tr>
-            <tr><td>کالری</td><td>${f(a.calories)} kcal</td><td>بر اساس متابولیسم، فعالیت فعلی و کاهش وزن امن</td></tr>
-            <tr><td>پروتئین</td><td>${f(a.protein)} g</td><td>برای سیری و حفظ عضله</td></tr>
-            <tr><td>چربی</td><td>${f(a.fat)} g</td><td>حد متعادل برای هورمون‌ها و سیری</td></tr>
-            <tr><td>کربوهیدرات</td><td>${f(a.carbs)} g</td><td>باقی کالری بعد از پروتئین و چربی</td></tr>
-            <tr><td>فیبر</td><td>${f(a.fiber)} g</td><td>حداقل مناسب برای کنترل اشتها و گوارش</td></tr>
-            <tr><td>آب</td><td>${f(a.waterGlasses)} لیوان</td><td>قابل تغییر در برنامه</td></tr>
-            <tr><td>قدم</td><td>${f(a.steps)} قدم</td><td>با توجه به تعداد قدم فعلی</td></tr>
-            <tr><td>ورزش</td><td>${f(a.exercise)} دقیقه</td><td>هدف روزانه قابل اجرا</td></tr>
+            <tr><th>${L("پارامتر", "Metric", "Mittari")}</th><th>${L("پیشنهاد روزانه", "Daily target", "Päivittäinen tavoite")}</th><th>${L("توضیح", "Note", "Huomio")}</th></tr>
+            <tr><td>${t("calories")}</td><td>${f(a.calories)} kcal</td><td>${L("بر اساس متابولیسم، فعالیت فعلی و کاهش وزن امن", "Based on metabolism, current activity, and safe weight loss", "Perustuu aineenvaihduntaan, nykyiseen aktiivisuuteen ja turvalliseen pudotukseen")}</td></tr>
+            <tr><td>${t("protein")}</td><td>${f(a.protein)} g</td><td>${L("برای سیری و حفظ عضله", "For fullness and muscle retention", "Kylläisyyteen ja lihasmassan ylläpitoon")}</td></tr>
+            <tr><td>${t("fat")}</td><td>${f(a.fat)} g</td><td>${L("حد متعادل برای هورمون‌ها و سیری", "A balanced range for hormones and fullness", "Tasapainoinen määrä hormoneille ja kylläisyydelle")}</td></tr>
+            <tr><td>${t("carbs")}</td><td>${f(a.carbs)} g</td><td>${L("باقی کالری بعد از پروتئین و چربی", "Remaining calories after protein and fat", "Jäljelle jäävät kalorit proteiinin ja rasvan jälkeen")}</td></tr>
+            <tr><td>${t("fiber")}</td><td>${f(a.fiber)} g</td><td>${L("حداقل مناسب برای کنترل اشتها و گوارش", "A practical minimum for appetite and digestion", "Käytännöllinen vähimmäismäärä ruokahalulle ja ruoansulatukselle")}</td></tr>
+            <tr><td>${t("water")}</td><td>${f(a.waterGlasses)} ${unitText("glass")}</td><td>${L("قابل تغییر در برنامه", "Adjustable in the plan", "Muokattavissa suunnitelmassa")}</td></tr>
+            <tr><td>${t("steps")}</td><td>${f(a.steps)} ${unitText("steps")}</td><td>${L("با توجه به تعداد قدم فعلی", "Based on current step level", "Nykyisen askelmäärän perusteella")}</td></tr>
+            <tr><td>${t("exercise")}</td><td>${f(a.exercise)} ${unitText("minutes")}</td><td>${L("هدف روزانه قابل اجرا", "A realistic daily target", "Toteutettavissa oleva päivätavoite")}</td></tr>
           </table>
           <div class="grid" style="margin-top:14px">
-            <button onclick="acceptPlan()">قبول دارم، شروع کنیم</button>
-            <button class="secondary" onclick="showGoalEditor()">می‌خواهم هدف‌ها را اصلاح کنم</button>
+            <button onclick="acceptPlan()">${L("قبول دارم، شروع کنیم", "Accept and Start", "Hyväksy ja aloita")}</button>
+            <button class="secondary" onclick="showGoalEditor()">${L("می‌خواهم هدف‌ها را اصلاح کنم", "I want to adjust the goals", "Haluan muokata tavoitteita")}</button>
           </div>
         </section>`);
     }
@@ -1517,16 +1560,20 @@
       } : {});
       page(`${topbar()}${steps(4)}
         <section class="card">
-          <h2>هدف‌گذاری هوشمند</h2>
-          <p class="muted">تو فقط سه چیز را مشخص کن: کاهش وزن ماهانه، قدم روزانه و مدت ورزش. کالری، پروتئین، چربی، کربوهیدرات و فیبر را من بر اساس مشخصات بدنت زنده حساب می‌کنم.</p>
+          <h2>${L("هدف‌گذاری هوشمند", "Smart Goal Setting", "Älykäs tavoiteasetus")}</h2>
+          <p class="muted">${L(
+            "تو فقط سه چیز را مشخص کن: کاهش وزن ماهانه، قدم روزانه و مدت ورزش. کالری، پروتئین، چربی، کربوهیدرات و فیبر را من بر اساس مشخصات بدنت زنده حساب می‌کنم.",
+            "You only set three things: monthly weight loss, daily steps, and daily exercise time. I calculate calories, protein, fat, carbs, and fiber live from your body profile.",
+            "Sinun tarvitsee asettaa vain kolme asiaa: kuukausittainen painonpudotus, päivittäiset askeleet ja päivittäinen liikunta-aika. Lasken kalorit, proteiinin, rasvan, hiilihydraatit ja kuidun automaattisesti kehotietojesi perusteella."
+          )}</p>
           <div class="grid-3">
-            <div><label>از تاریخ</label><input id="effectiveFrom" type="date" value="${isoToday()}"></div>
-            <div><label>کاهش وزن ماهانه (kg)</label><input id="monthlyLoss" type="number" step="0.1" value="${current.monthlyLoss || (state.analysis?.safeMonthly || 1.5)}" oninput="previewGoal()"></div>
-            <div><label>قدم روزانه</label><input id="goalSteps" type="number" value="${current.steps || 8000}" oninput="previewGoal()"></div>
-            <div><label>ورزش روزانه (دقیقه)</label><input id="goalExercise" type="number" value="${current.exercise || 30}" oninput="previewGoal()"></div>
+            <div><label>${L("از تاریخ", "Effective from", "Voimassa alkaen")}</label><input id="effectiveFrom" type="date" value="${isoToday()}"></div>
+            <div><label>${L("کاهش وزن ماهانه (kg)", "Monthly weight loss (kg)", "Painonpudotus kuukaudessa (kg)")}</label><input id="monthlyLoss" type="number" step="0.1" value="${current.monthlyLoss || (state.analysis?.safeMonthly || 1.5)}" oninput="previewGoal()"></div>
+            <div><label>${L("قدم روزانه", "Daily steps", "Päivittäiset askeleet")}</label><input id="goalSteps" type="number" value="${current.steps || 8000}" oninput="previewGoal()"></div>
+            <div><label>${L("ورزش روزانه (دقیقه)", "Daily exercise (min)", "Päivittäinen liikunta (min)")}</label><input id="goalExercise" type="number" value="${current.exercise || 30}" oninput="previewGoal()"></div>
           </div>
           <div id="goalPreview" style="margin-top:14px"></div>
-          <button style="margin-top:14px" onclick="saveEditedPlan()">ذخیره هدف از این تاریخ</button>
+          <button style="margin-top:14px" onclick="saveEditedPlan()">${L("ذخیره هدف از این تاریخ", "Save goal from this date", "Tallenna tavoite tästä päivästä")}</button>
         </section>`);
       previewGoal();
     }
@@ -1550,14 +1597,14 @@
     function previewGoal() {
       const p = buildPlanFromInputs();
       $("#goalPreview").innerHTML = `<div class="grid-4">
-        <div class="metric"><small>کالری</small><b>${f(p.calories)} kcal</b></div>
-        <div class="metric"><small>پروتئین</small><b>${f(p.protein)} g</b></div>
-        <div class="metric"><small>چربی</small><b>${f(p.fat)} g</b></div>
-        <div class="metric"><small>کربوهیدرات</small><b>${f(p.carbs)} g</b></div>
-        <div class="metric"><small>فیبر</small><b>${f(p.fiber)} g</b></div>
-        <div class="metric"><small>آب</small><b>${f(p.waterGlasses)} لیوان</b></div>
-        <div class="metric"><small>قدم</small><b>${f(p.steps)}</b></div>
-        <div class="metric"><small>ورزش</small><b>${f(p.exercise)} دقیقه</b></div>
+        <div class="metric"><small>${t("calories")}</small><b>${f(p.calories)} kcal</b></div>
+        <div class="metric"><small>${t("protein")}</small><b>${f(p.protein)} g</b></div>
+        <div class="metric"><small>${t("fat")}</small><b>${f(p.fat)} g</b></div>
+        <div class="metric"><small>${t("carbs")}</small><b>${f(p.carbs)} g</b></div>
+        <div class="metric"><small>${t("fiber")}</small><b>${f(p.fiber)} g</b></div>
+        <div class="metric"><small>${t("water")}</small><b>${f(p.waterGlasses)} ${unitText("glass")}</b></div>
+        <div class="metric"><small>${t("steps")}</small><b>${f(p.steps)} ${unitText("steps")}</b></div>
+        <div class="metric"><small>${t("exercise")}</small><b>${f(p.exercise)} ${unitText("minutes")}</b></div>
       </div>`;
     }
 
