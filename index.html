@@ -2573,16 +2573,30 @@
 
     async function boot() {
       showLoading();
+      let bootFinished = false;
+      const bootGuard = setTimeout(() => {
+        if (bootFinished) return;
+        bootFinished = true;
+        state = defaultState();
+        showAuth();
+        setAuthMessage(lang() === "en" ? "Startup took too long. Please log in again." : lang() === "fi" ? "Käynnistys kesti liian kauan. Kirjaudu uudelleen." : "آماده‌سازی بیش از حد طول کشید. دوباره وارد شو.");
+      }, 6500);
       let data = {};
       try {
         ({ data } = await withTimeout(db.auth.getSession(), 9000));
       } catch (error) {
+        if (bootFinished) return;
+        bootFinished = true;
+        clearTimeout(bootGuard);
         console.error(error);
         state = defaultState();
         showAuth();
         setAuthMessage(lang() === "en" ? "Could not prepare the account. Please try again." : lang() === "fi" ? "Tilin valmistelu epäonnistui. Yritä uudelleen." : "آماده‌سازی حساب گیر کرد. دوباره تلاش کن.");
         return;
       }
+      if (bootFinished) return;
+      bootFinished = true;
+      clearTimeout(bootGuard);
       if (data.session?.user) {
         try {
           await loadUserState(data.session.user);
