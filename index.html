@@ -906,6 +906,7 @@
       next.ingredientTab ||= "all";
       next.lang ||= localStorage.getItem("fitCalendarLang") || "fa";
       next.visibleCharts ||= defaultChartKeys();
+      if (Array.isArray(next.visibleCharts) && !next.visibleCharts.includes("exercise")) next.visibleCharts.push("exercise");
       next.logs ||= {};
       next.currentDate ||= isoToday();
       next.chartRange ||= { from: addDays(next.currentDate, -30), to: next.currentDate };
@@ -1128,7 +1129,7 @@
       return labels[lang()]?.[category] || category;
     }
 
-    function unitText(kind) {
+    function compactUnit(kind) {
       const units = {
         kg: L("کیلوگرم", "kg", "kg"),
         kgMonth: L("کیلوگرم در ماه", "kg/month", "kg/kk"),
@@ -1227,6 +1228,7 @@
     }
 
     function unitText(unit) {
+      if (["kg", "kgMonth", "glass", "steps", "minutes"].includes(unit)) return compactUnit(unit);
       return UNIT_LABELS[lang()]?.[unit] || unit || UNIT_LABELS[lang()]?.["۱۰۰ گرم"] || "۱۰۰ گرم";
     }
 
@@ -1244,6 +1246,12 @@
         ["گردو", "walnuts"], ["بادام هندی", "cashews"], ["بادام", "almonds"], ["پسته", "pistachios"], ["فندق", "hazelnuts"], ["کنجد", "sesame"], ["تخم کتان", "flaxseed"], ["دانه چیا", "chia seeds"],
         ["شکر", "sugar"], ["عسل", "honey"], ["شکلات تلخ", "dark chocolate"], ["شکلات شیری", "milk chocolate"], ["سس مایونز", "mayonnaise"], ["سس خردل", "mustard"], ["سس باربیکیو", "barbecue sauce"], ["سس سویا", "soy sauce"],
         ["نمک", "salt"], ["زردچوبه", "turmeric"], ["فلفل سیاه", "black pepper"], ["دارچین", "cinnamon"], ["زنجبیل", "ginger"], ["آبلیمو", "lemon juice"], ["سرکه", "vinegar"], ["آب", "water"],
+        ["نان تست", "toast bread"], ["نان چاودار", "rye bread"], ["نان سنگک", "sangak bread"], ["نان لواش", "lavash bread"], ["نان بربری", "barbari bread"], ["نان", "bread"],
+        ["سوپ", "soup"], ["سالاد", "salad"], ["ساندویچ", "sandwich"], ["پیتزا", "pizza"], ["همبرگر", "hamburger"], ["هات‌داگ", "hot dog"], ["املت", "omelet"], ["پنکیک", "pancake"], ["وافل", "waffle"],
+        ["سوشی", "sushi"], ["رامن", "ramen"], ["تاکو", "taco"], ["بوریتو", "burrito"], ["فلافل", "falafel"], ["هوموس", "hummus"], ["لازانیا", "lasagna"], ["کوفته", "meatballs"], ["استیک", "steak"],
+        ["سس سالسا", "salsa"], ["سس پستو", "pesto"], ["سس تریاکی", "teriyaki sauce"], ["سس ماهی", "fish sauce"], ["سس", "sauce"], ["قهوه", "coffee"], ["لاته", "latte"], ["چای", "tea"], ["اسموتی", "smoothie"],
+        ["چیپس", "chips"], ["پاپ‌کورن", "popcorn"], ["پرتزل", "pretzel"], ["کروسان", "croissant"], ["مافین", "muffin"], ["دونات", "donut"], ["بستنی", "ice cream"], ["کیک", "cake"], ["بیسکویت", "biscuit"],
+        ["گریل‌شده", "grilled"], ["آب‌پز", "boiled"], ["سرخ‌کرده", "fried"], ["دودی", "smoked"], ["شیرین", "sweetened"],
         ["خام", "raw"], ["پخته", "cooked"], ["خشک", "dry"], ["تازه", "fresh"], ["کم‌چرب", "low-fat"], ["بدون پوست", "skinless"], ["کامل", "whole"], ["ساده", "plain"], ["فنلاندی", "Finnish"]
       ],
       fi: [
@@ -1259,6 +1267,12 @@
         ["گردو", "saksanpähkinät"], ["بادام هندی", "cashewpähkinät"], ["بادام", "mantelit"], ["پسته", "pistaasit"], ["فندق", "hasselpähkinät"], ["کنجد", "seesami"], ["تخم کتان", "pellavansiemen"], ["دانه چیا", "chiansiemenet"],
         ["شکر", "sokeri"], ["عسل", "hunaja"], ["شکلات تلخ", "tumma suklaa"], ["شکلات شیری", "maitosuklaa"], ["سس مایونز", "majoneesi"], ["سس خردل", "sinappi"], ["سس باربیکیو", "barbecue-kastike"], ["سس سویا", "soijakastike"],
         ["نمک", "suola"], ["زردچوبه", "kurkuma"], ["فلفل سیاه", "mustapippuri"], ["دارچین", "kaneli"], ["زنجبیل", "inkivääri"], ["آبلیمو", "sitruunamehu"], ["سرکه", "etikka"], ["آب", "vesi"],
+        ["نان تست", "paahtoleipä"], ["نان چاودار", "ruisleipä"], ["نان سنگک", "sangak-leipä"], ["نان لواش", "lavash-leipä"], ["نان بربری", "barbari-leipä"], ["نان", "leipä"],
+        ["سوپ", "keitto"], ["سالاد", "salaatti"], ["ساندویچ", "voileipä"], ["پیتزا", "pizza"], ["همبرگر", "hampurilainen"], ["هات‌داگ", "hot dog"], ["املت", "munakas"], ["پنکیک", "pannukakku"], ["وافل", "vohveli"],
+        ["سوشی", "sushi"], ["رامن", "ramen"], ["تاکو", "taco"], ["بوریتو", "burrito"], ["فلافل", "falafel"], ["هوموس", "hummus"], ["لازانیا", "lasagne"], ["کوفته", "lihapullat"], ["استیک", "pihvi"],
+        ["سس سالسا", "salsa"], ["سس پستو", "pesto"], ["سس تریاکی", "teriyaki-kastike"], ["سس ماهی", "kalakastike"], ["سس", "kastike"], ["قهوه", "kahvi"], ["لاته", "latte"], ["چای", "tee"], ["اسموتی", "smoothie"],
+        ["چیپس", "sipsit"], ["پاپ‌کورن", "popcorn"], ["پرتزل", "pretzel"], ["کروسان", "croissant"], ["مافین", "muffinssi"], ["دونات", "donitsi"], ["بستنی", "jäätelö"], ["کیک", "kakku"], ["بیسکویت", "keksi"],
+        ["گریل‌شده", "grillattu"], ["آب‌پز", "keitetty"], ["سرخ‌کرده", "paistettu"], ["دودی", "savustettu"], ["شیرین", "makeutettu"],
         ["خام", "raaka"], ["پخته", "kypsä"], ["خشک", "kuiva"], ["تازه", "tuore"], ["کم‌چرب", "vähärasvainen"], ["بدون پوست", "nahaton"], ["کامل", "kokonainen"], ["ساده", "maustamaton"], ["فنلاندی", "suomalainen"]
       ]
     };
@@ -1267,7 +1281,8 @@
       if (!item || isCustomFood(item.id) || isCustomIngredient(item.id)) return item?.name || "";
       if (lang() === "fa") return item.name;
       let out = item.name;
-      for (const [fa, local] of NAME_REPLACEMENTS[lang()] || []) out = out.split(fa).join(local);
+      const replacements = [...(NAME_REPLACEMENTS[lang()] || [])].sort((a, b) => b[0].length - a[0].length);
+      for (const [fa, local] of replacements) out = out.split(fa).join(local);
       return out === item.name ? item.name : out;
     }
 
@@ -1689,37 +1704,37 @@
           <section>
             <div class="card">
               <div class="grid">
-                <div><label>تاریخ</label><input id="datePicker" type="date" value="${state.currentDate}" onchange="changeDate(this.value)"></div>
-                <div><label>تعداد پیش‌فرض از واحد غذا</label><input id="defaultUnits" type="number" step="0.1" value="1"></div>
+                <div><label>${t("date")}</label><input id="datePicker" type="date" value="${state.currentDate}" onchange="changeDate(this.value)"></div>
+                <div><label>${L("تعداد پیش‌فرض از واحد غذا", "Default food amount", "Ruoan oletusmäärä")}</label><input id="defaultUnits" type="number" step="0.1" value="1"></div>
               </div>
               ${dateStrip()}
-              <div id="dropzone" class="dropzone">غذا را اینجا رها کن یا از دیتابیس کلیک کن</div>
+              <div id="dropzone" class="dropzone">${L("غذا را اینجا رها کن یا از دیتابیس کلیک کن", "Drop food here or click it from the database", "Pudota ruoka tähän tai klikkaa sitä tietokannasta")}</div>
               <div id="entries"></div>
-              <h3 style="margin-top:16px">آب، قدم، ورزش و وزن</h3>
+              <h3 style="margin-top:16px">${L("آب، قدم، ورزش و وزن", "Water, steps, exercise and weight", "Vesi, askeleet, liikunta ja paino")}</h3>
               <div class="tracker-grid">
-                ${tracker("water", "لیوان آب", log.water || 0, plan.waterGlasses || 8, "لیوان", 1)}
-                ${tracker("steps", "قدم امروز", log.steps || 0, plan.steps || 8000, "قدم", 100)}
-                ${tracker("exercise", "ورزش امروز", log.exercise || 0, plan.exercise || 30, "دقیقه", 5)}
+                ${tracker("water", t("water"), log.water || 0, plan.waterGlasses || 8, unitText("glass"), 1)}
+                ${tracker("steps", t("steps"), log.steps || 0, plan.steps || 8000, unitText("steps"), 100)}
+                ${tracker("exercise", t("exercise"), log.exercise || 0, plan.exercise || 30, unitText("minutes"), 5)}
               </div>
               <div class="grid-3" style="margin-top:12px">
-                <div><label>وزن امروز (kg)</label><input id="weightInput" type="number" step="0.1" value="${weightValue}" onchange="setDaily('weight', this.value)"></div>
+                <div><label>${L("وزن امروز (kg)", "Today's weight (kg)", "Tämän päivän paino (kg)")}</label><input id="weightInput" type="number" step="0.1" value="${weightValue}" onchange="setDaily('weight', this.value)"></div>
               </div>
             </div>
             <div class="card" style="margin-top:16px">
               <div class="grid">
-                <div><label>شروع نمودار</label><input id="chartFrom" type="date" value="${state.chartRange.from || addDays(state.currentDate, -30)}" onchange="setChartRangeFromInputs()"></div>
-                <div><label>پایان نمودار</label><input id="chartTo" type="date" value="${state.chartRange.to || state.currentDate}" onchange="setChartRangeFromInputs()"></div>
+                <div><label>${L("شروع نمودار", "Chart start", "Kaavion alku")}</label><input id="chartFrom" type="date" value="${state.chartRange.from || addDays(state.currentDate, -30)}" onchange="setChartRangeFromInputs()"></div>
+                <div><label>${L("پایان نمودار", "Chart end", "Kaavion loppu")}</label><input id="chartTo" type="date" value="${state.chartRange.to || state.currentDate}" onchange="setChartRangeFromInputs()"></div>
               </div>
               <div class="quick-range">
-                <button class="secondary" onclick="quickRange(7)">هفته گذشته</button>
-                <button class="secondary" onclick="quickRange(30)">ماه گذشته</button>
-                <button class="secondary" onclick="quickRange(90)">سه ماه گذشته</button>
-                <button class="secondary" onclick="quickRange(365)">سال گذشته</button>
-                <button class="ghost" onclick="setChartRangeFromInputs()">اعمال بازه</button>
+                <button class="secondary" onclick="quickRange(7)">${L("هفته گذشته", "Last week", "Viime viikko")}</button>
+                <button class="secondary" onclick="quickRange(30)">${L("ماه گذشته", "Last month", "Viime kuukausi")}</button>
+                <button class="secondary" onclick="quickRange(90)">${L("سه ماه گذشته", "Last 3 months", "Viimeiset 3 kk")}</button>
+                <button class="secondary" onclick="quickRange(365)">${L("سال گذشته", "Last year", "Viime vuosi")}</button>
+                <button class="ghost" onclick="setChartRangeFromInputs()">${L("اعمال بازه", "Apply range", "Käytä väliä")}</button>
               </div>
               <div class="chart-tools" style="margin-top:14px">
                 <aside class="chart-picker">
-                  <h3>انتخاب نمودار</h3>
+                  <h3>${L("انتخاب نمودار", "Choose charts", "Valitse kaaviot")}</h3>
                   <div id="chartPicker">${chartPicker()}</div>
                 </aside>
                 <div id="charts" class="charts"></div>
@@ -1743,9 +1758,9 @@
         metric("fat", total.fat, plan.fat, "g"),
         metric("carbs", total.carbs, plan.carbs, "g"),
         metric("fiber", total.fiber, plan.fiber, "g"),
-        metric("water", log.water, plan.waterGlasses, lang() === "fa" ? "لیوان" : lang() === "fi" ? "lasia" : "glasses"),
+        metric("water", log.water, plan.waterGlasses, unitText("glass")),
         metric("steps", log.steps, plan.steps, ""),
-        metric("exercise", log.exercise, plan.exercise, lang() === "fa" ? "دقیقه" : lang() === "fi" ? "min" : "min")
+        metric("exercise", log.exercise, plan.exercise, unitText("minutes"))
       ].join("");
     }
 
@@ -1783,7 +1798,7 @@
       const ratio = target ? Number(value || 0) / target : 0;
       const cls = ratio >= .85 && ratio <= 1.25 ? "good" : ratio >= .45 ? "warn" : "bad";
       return `<div class="tracker ${cls}" id="${key}Tracker">
-        <div class="tracker-head"><b>${label}</b><span>هدف: ${f(target, 0)} ${unit}</span></div>
+        <div class="tracker-head"><b>${label}</b><span>${t("target")}: ${f(target, 0)} ${unit}</span></div>
         <div class="tracker-control">
           <input id="${key}Number" type="number" min="0" max="${max}" step="${step}" value="${value}" oninput="syncDaily('${key}', this.value)">
           <input id="${key}Range" type="range" min="0" max="${max}" step="${step}" value="${value}" oninput="syncDaily('${key}', this.value)">
@@ -1807,12 +1822,12 @@
           }).join("")}
         </div>
         <button class="secondary" onclick="shiftDate(1)">›</button>
-        <button class="secondary today-btn" onclick="goToday()">امروز</button>
+        <button class="secondary today-btn" onclick="goToday()">${t("today")}</button>
       </div>`;
     }
 
     function weekday(date) {
-      return new Date(date + "T12:00:00").toLocaleDateString("fa-IR", { weekday: "short" });
+      return new Date(date + "T12:00:00").toLocaleDateString(LANGS[lang()]?.locale || "fa-IR", { weekday: "short" });
     }
 
     function addDays(date, days) {
@@ -1944,7 +1959,7 @@
         return matchesSearch && matchesTab;
       });
       if (!list.length) {
-        $("#foodList").innerHTML = `<div class="notice">در این دسته هنوز غذایی پیدا نشد.</div>`;
+        $("#foodList").innerHTML = `<div class="notice">${L("در این دسته هنوز غذایی پیدا نشد.", "No food found in this category yet.", "Tästä kategoriasta ei vielä löytynyt ruokaa.")}</div>`;
         return;
       }
       $("#foodList").innerHTML = list.map(food => `<div class="food-card" draggable="true" ondragstart="dragFood(event, ${food.id})" onclick="addFood(${food.id})">
@@ -1986,7 +2001,7 @@
     function renderEntries() {
       const log = currentLog();
       if (!log.entries.length) {
-        $("#entries").innerHTML = `<div class="notice">هنوز غذایی برای این روز ثبت نشده.</div>`;
+        $("#entries").innerHTML = `<div class="notice">${L("هنوز غذایی برای این روز ثبت نشده.", "No food has been logged for this day yet.", "Tälle päivälle ei ole vielä kirjattu ruokaa.")}</div>`;
         return;
       }
       $("#entries").innerHTML = `<table>
@@ -2102,6 +2117,7 @@
         ["fiber", t("fiber"), "fiber", "fiber"],
         ["water", t("water"), "water", "waterGlasses"],
         ["steps", t("steps"), "steps", "steps"],
+        ["exercise", t("exercise"), "exercise", "exercise"],
         ["weight", t("weight"), "weight", null]
       ];
     }
@@ -2133,7 +2149,7 @@
       const chosen = chartDefinitions().filter(([id]) => selected.has(id));
       $("#charts").innerHTML = chosen.length
         ? chosen.map(([, title, key, target]) => chart(title, rows, key, target)).join("")
-        : `<div class="notice">هیچ نموداری انتخاب نشده. از سمت چپ حداقل یکی را تیک بزن.</div>`;
+        : `<div class="notice">${L("هیچ نموداری انتخاب نشده. از سمت چپ حداقل یکی را تیک بزن.", "No chart is selected. Choose at least one from the left.", "Yhtään kaaviota ei ole valittu. Valitse vasemmalta vähintään yksi.")}</div>`;
     }
 
     function chartRows() {
@@ -2195,14 +2211,14 @@
         .join("") : "";
       return `<div class="chart-card">
         <h3>${title}</h3>
-        <svg viewBox="0 0 630 235" role="img" aria-label="نمودار ${title}">
+        <svg viewBox="0 0 630 235" role="img" aria-label="${L("نمودار", "Chart", "Kaavio")} ${title}">
           ${ticks}
           <line class="axis" x1="${plotLeft}" y1="${plotTop}" x2="${plotLeft}" y2="${plotBottom}"></line>
           ${goalLine}
           <polyline class="actual" points="${actual}"></polyline>
           ${xLabels}
         </svg>
-        <div class="legend"><span><i style="background:var(--blue)"></i>مصرف</span>${targetKey ? `<span><i style="background:var(--red)"></i>هدف</span>` : ""}</div>
+        <div class="legend"><span><i style="background:var(--blue)"></i>${L("مصرف", "Consumed", "Toteutunut")}</span>${targetKey ? `<span><i style="background:var(--red)"></i>${t("target")}</span>` : ""}</div>
       </div>`;
     }
 
@@ -2233,10 +2249,13 @@
       document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="foodModal">
         <div class="modal">
           <h2>${food ? t("edit") : t("addFood")}</h2>
-          <p class="muted">${food ? "مقدارهای این غذا را به ازای واحد انتخابی اصلاح کن." : "واحد غذا را انتخاب کن و مقدارها را برای همان واحد وارد کن. شماره غذا خودکار ساخته می‌شود."}</p>
+          <p class="muted">${food
+            ? L("مقدارهای این غذا را به ازای واحد انتخابی اصلاح کن.", "Edit this food's nutrition values for the selected unit.", "Muokkaa tämän ruoan ravintoarvoja valitulle yksikölle.")
+            : L("واحد غذا را انتخاب کن و مقدارها را برای همان واحد وارد کن. شماره غذا خودکار ساخته می‌شود.", "Choose the food unit and enter values for that unit. The food ID is created automatically.", "Valitse ruoan yksikkö ja syötä arvot sille yksikölle. Ruoan tunnus luodaan automaattisesti.")
+          }</p>
           <input id="editingFoodId" type="hidden" value="${food?.id || ""}">
           <div class="grid-3">
-            <div><label>${t("name")}</label><input id="newFoodName" value="${esc(food?.name || "")}"></div>
+            <div><label>${t("name")}</label><input id="newFoodName" value="${esc(food ? translatedName(food) : "")}"></div>
             <div><label>${t("category")}</label><select id="newFoodCategory">
               ${foodCategories.filter(([key]) => key !== "all" && key !== "custom").map(([key]) => `<option value="${key}" ${getFoodCategory(food || { id: 0, name: "" }) === key ? "selected" : ""}>${categoryText(key)}</option>`).join("")}
             </select></div>
@@ -2303,7 +2322,7 @@
 
     function deleteFood(id) {
       if (!isCustomFood(id)) return;
-      if (!confirm("این غذا از دیتابیس و لاگ‌های ثبت‌شده حذف شود؟")) return;
+      if (!confirm(L("این غذا از دیتابیس و لاگ‌های ثبت‌شده حذف شود؟", "Delete this food from the database and saved logs?", "Poistetaanko tämä ruoka tietokannasta ja tallennetuista kirjauksista?"))) return;
       const index = foods.findIndex(food => food.id === id);
       if (index >= 0) foods.splice(index, 1);
       state.customFoods = state.customFoods.filter(food => food.id !== id);
@@ -2343,7 +2362,7 @@
           <b>${esc(translatedName(item))}</b>
           <small class="tiny">${t("unit")}: ${esc(unitText(item.unit))} | ${item.cal} kcal | ${t("protein")} ${item.protein}g | ${t("fiber")} ${item.fiber}g</small>
         </div>
-        <div><label>تعداد واحد</label><input class="recipeAmount" type="number" min="0" step="0.1" value="${amount}" oninput="updateRecipePreview()"></div>
+        <div><label>${L("تعداد واحد", "Unit amount", "Yksikkömäärä")}</label><input class="recipeAmount" type="number" min="0" step="0.1" value="${amount}" oninput="updateRecipePreview()"></div>
         <button class="danger" onclick="removeRecipeRow(this)">×</button>
       </div>`;
     }
@@ -2358,10 +2377,14 @@
       document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="recipeModal">
         <div class="modal wide">
           <h2>${editingFood ? t("recipe") : t("cooking")}</h2>
-          <p class="muted">مواد اولیه را از پنل انتخاب کن یا بکش داخل دستور پخت. بعد مقدار هر ماده و تعداد واحد خروجی غذا را وارد کن تا ارزش غذایی هر واحد محاسبه شود.</p>
+          <p class="muted">${L(
+            "مواد اولیه را از پنل انتخاب کن یا بکش داخل دستور پخت. بعد مقدار هر ماده و تعداد واحد خروجی غذا را وارد کن تا ارزش غذایی هر واحد محاسبه شود.",
+            "Choose ingredients from the panel or drag them into the recipe. Then enter each ingredient amount and the final yield so nutrition per unit can be calculated.",
+            "Valitse raaka-aineet paneelista tai vedä ne reseptiin. Syötä sitten jokaisen aineksen määrä ja lopullinen määrä, jotta ravintoarvot yksikköä kohti voidaan laskea."
+          )}</p>
           <input id="editingRecipeFoodId" type="hidden" value="${editingFood?.id || ""}">
           <div class="grid-3">
-            <div><label>${t("name")}</label><input id="recipeFoodName" placeholder="${lang() === "fa" ? "مثلاً قورمه سبزی خانگی" : lang() === "fi" ? "esim. kotitekoinen keitto" : "e.g. homemade stew"}" value="${esc(editingFood?.name || "")}"></div>
+            <div><label>${t("name")}</label><input id="recipeFoodName" placeholder="${lang() === "fa" ? "مثلاً قورمه سبزی خانگی" : lang() === "fi" ? "esim. kotitekoinen keitto" : "e.g. homemade stew"}" value="${esc(editingFood ? translatedName(editingFood) : "")}"></div>
             <div><label>${t("unit")}</label><select id="recipeFoodUnit" onchange="updateRecipePreview()">${unitOptions(recipeUnit)}</select></div>
             <div><label>${t("customUnit")}</label><input id="recipeCustomUnit" placeholder="${unitText("۱ کاسه")}" value="${isKnownUnit(recipeUnit) ? "" : esc(recipeUnit)}" oninput="updateRecipePreview()"></div>
             <div><label>${lang() === "fa" ? "کل غذا چند واحد شد؟" : lang() === "fi" ? "Montako annosta valmistui?" : "How many servings did it make?"}</label><input id="recipeYield" type="number" min="0.1" step="0.1" value="${recipe?.servings || 1}" oninput="updateRecipePreview()"></div>
@@ -2379,7 +2402,7 @@
             </aside>
             <section>
               <h3>${t("recipe")}</h3>
-              <div id="recipeDropzone" class="dropzone">ماده اولیه را اینجا رها کن یا از پنل کلیک کن</div>
+              <div id="recipeDropzone" class="dropzone">${L("ماده اولیه را اینجا رها کن یا از پنل کلیک کن", "Drop an ingredient here or click it from the panel", "Pudota raaka-aine tähän tai klikkaa sitä paneelista")}</div>
               <div id="recipeRows">
                 ${recipeRows}
               </div>
@@ -2411,9 +2434,9 @@
         const matchesSearch = nameMatches(item, q);
         const matchesTab = active === "all" || (active === "custom" ? isCustomIngredient(item.id) : item.category === active);
         return matchesSearch && matchesTab;
-      }).slice(0, 180);
+      });
       if (!list.length) {
-        listBox.innerHTML = `<div class="notice">در این دسته ماده اولیه‌ای پیدا نشد.</div>`;
+        listBox.innerHTML = `<div class="notice">${L("در این دسته ماده اولیه‌ای پیدا نشد.", "No ingredient found in this category.", "Tästä kategoriasta ei löytynyt raaka-ainetta.")}</div>`;
         return;
       }
       listBox.innerHTML = list.map(item => `<div class="ingredient-card" draggable="true" ondragstart="dragIngredient(event, ${item.id})" onclick="addIngredientToRecipe(${item.id})">
@@ -2535,10 +2558,13 @@
       document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="ingredientModal">
         <div class="modal">
           <h2>${item ? t("edit") : (lang() === "fa" ? "افزودن ماده اولیه جدید" : lang() === "fi" ? "Lisää uusi raaka-aine" : "Add new ingredient")}</h2>
-          <p class="muted">${item ? "این تغییر فقط برای حساب خودت ذخیره می‌شود." : "واحد ماده را انتخاب کن و مقدارها را برای همان واحد وارد کن."}</p>
+          <p class="muted">${item
+            ? L("این تغییر فقط برای حساب خودت ذخیره می‌شود.", "This change is saved only for your own account.", "Tämä muutos tallennetaan vain omalle tilillesi.")
+            : L("واحد ماده را انتخاب کن و مقدارها را برای همان واحد وارد کن.", "Choose the ingredient unit and enter values for that unit.", "Valitse raaka-aineen yksikkö ja syötä arvot sille yksikölle.")
+          }</p>
           <input id="editingIngredientId" type="hidden" value="${item?.id || ""}">
           <div class="grid-3">
-            <div><label>${t("name")}</label><input id="newIngredientName" value="${esc(item?.name || "")}"></div>
+            <div><label>${t("name")}</label><input id="newIngredientName" value="${esc(item ? translatedName(item) : "")}"></div>
             <div><label>${t("category")}</label><select id="newIngredientCategory">
               ${ingredientCategories.filter(([key]) => key !== "all" && key !== "custom").map(([key]) => `<option value="${key}" ${((item?.category || "protein") === key) ? "selected" : ""}>${categoryText(key, "ingredient")}</option>`).join("")}
             </select></div>
@@ -2599,7 +2625,7 @@
 
     function deleteIngredient(id) {
       if (!isCustomIngredient(id)) return;
-      if (!confirm("این ماده اولیه حذف شود؟ دستور پخت‌های قبلی که از آن استفاده کرده‌اند، اسم و واحد ذخیره‌شده خودشان را نگه می‌دارند.")) return;
+      if (!confirm(L("این ماده اولیه حذف شود؟ دستور پخت‌های قبلی که از آن استفاده کرده‌اند، اسم و واحد ذخیره‌شده خودشان را نگه می‌دارند.", "Delete this ingredient? Older recipes that used it keep their saved name and unit.", "Poistetaanko tämä raaka-aine? Sitä käyttäneet vanhat reseptit säilyttävät tallennetun nimen ja yksikön."))) return;
       const index = rawIngredients.findIndex(item => item.id === id);
       if (index >= 0) rawIngredients.splice(index, 1);
       state.customIngredients = state.customIngredients.filter(item => item.id !== id);
@@ -2609,7 +2635,7 @@
     }
 
     function showLoading() {
-      root.innerHTML = `<div class="app"><section class="card" style="max-width:720px;margin:10vh auto"><h2>در حال آماده‌سازی حساب...</h2><p class="muted">چند لحظه صبر کن.</p></section></div>`;
+      root.innerHTML = `<div class="app"><section class="card" style="max-width:720px;margin:10vh auto"><h2>${L("در حال آماده‌سازی حساب...", "Preparing your account...", "Valmistellaan tiliä...")}</h2><p class="muted">${L("چند لحظه صبر کن.", "Please wait a moment.", "Odota hetki.")}</p></section></div>`;
     }
 
     function routeAfterAuth() {
