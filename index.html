@@ -1030,16 +1030,16 @@
 
     async function loadUserState(user) {
       authUser = user;
-      const { data, error } = await db
+      const { data, error } = await withTimeout(db
         .from("fit_calendar_states")
         .select("data")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .maybeSingle(), 9000);
       if (error) throw error;
       const localBackup = JSON.parse(localStorage.getItem(`${storeKey}:${user.id}`) || "{}");
       state = prepareState(data?.data || localBackup || {});
       state.user = { email: user.email };
-      await saveNow();
+      saveNow().catch(error => console.error("Initial save failed", error));
     }
 
     async function saveNow() {
@@ -1047,11 +1047,11 @@
       state.user = { email: authUser.email };
       const payload = exportState();
       localStorage.setItem(`${storeKey}:${authUser.id}`, JSON.stringify(payload));
-      const { error } = await db.from("fit_calendar_states").upsert({
+      const { error } = await withTimeout(db.from("fit_calendar_states").upsert({
         user_id: authUser.id,
         data: payload,
         updated_at: new Date().toISOString()
-      });
+      }), 9000);
       if (error) console.error("Save failed", error);
     }
 
@@ -1059,6 +1059,16 @@
       if (!authUser) return;
       clearTimeout(saveTimer);
       saveTimer = setTimeout(saveNow, 250);
+    }
+
+    function withTimeout(promise, ms = 9000) {
+      let timer;
+      return Promise.race([
+        promise.finally(() => clearTimeout(timer)),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error("Request timed out")), ms);
+        })
+      ]);
     }
 
     function lang() {
@@ -2510,7 +2520,16 @@
 
     async function boot() {
       showLoading();
-      const { data } = await db.auth.getSession();
+      let data = {};
+      try {
+        ({ data } = await withTimeout(db.auth.getSession(), 9000));
+      } catch (error) {
+        console.error(error);
+        state = defaultState();
+        showAuth();
+        setAuthMessage(lang() === "en" ? "Could not prepare the account. Please try again." : lang() === "fi" ? "Tilin valmistelu epäonnistui. Yritä uudelleen." : "آماده‌سازی حساب گیر کرد. دوباره تلاش کن.");
+        return;
+      }
       if (data.session?.user) {
         try {
           await loadUserState(data.session.user);
