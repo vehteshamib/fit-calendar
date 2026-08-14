@@ -864,6 +864,8 @@
     const SUPABASE_URL = "https://sdofiorarcavuhrrfcei.supabase.co";
     const SUPABASE_KEY = "sb_publishable_XkbTLJ4f657yVcpUzWc_0w_052_OPbm";
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const CUSTOM_FOOD_START = 10000;
+    const CUSTOM_INGREDIENT_START = 20000;
     let authUser = null;
     let currentLang = localStorage.getItem("fitCalendarLang") || "fa";
     let state = defaultState();
@@ -909,9 +911,67 @@
       next.chartRange ||= { from: addDays(next.currentDate, -30), to: next.currentDate };
       currentLang = next.lang || currentLang || "fa";
       localStorage.setItem("fitCalendarLang", currentLang);
+      migrateCustomFoodIds(next);
+      migrateCustomIngredientIds(next);
       resetFoods(next);
       resetIngredients(next);
       return next;
+    }
+
+    function nextSafeId(items, start) {
+      return Math.max(start - 1, ...items.map(item => Number(item.id || 0))) + 1;
+    }
+
+    function migrateCustomFoodIds(source) {
+      const baseIds = new Set(defaultFoods.map(food => food.id));
+      const used = new Set([...defaultFoods.map(food => food.id), ...(source.customFoods || []).map(food => food.id)]);
+      const remap = {};
+      source.customFoods = (source.customFoods || []).map(food => {
+        if (food.id >= CUSTOM_FOOD_START && !baseIds.has(food.id)) return food;
+        if (!baseIds.has(food.id) && food.id >= 1000) return food;
+        let id = Math.max(CUSTOM_FOOD_START - 1, ...used) + 1;
+        while (used.has(id)) id++;
+        used.add(id);
+        remap[food.id] = id;
+        return { ...food, id };
+      });
+      if (!Object.keys(remap).length) return;
+      Object.values(source.logs || {}).forEach(log => {
+        (log.entries || []).forEach(entry => {
+          if (remap[entry.foodId]) entry.foodId = remap[entry.foodId];
+        });
+      });
+      const overrides = {};
+      Object.entries(source.foodOverrides || {}).forEach(([id, food]) => {
+        if (!remap[id]) overrides[id] = food;
+      });
+      source.foodOverrides = overrides;
+    }
+
+    function migrateCustomIngredientIds(source) {
+      const baseIds = new Set(defaultIngredients.map(item => item.id));
+      const used = new Set([...defaultIngredients.map(item => item.id), ...(source.customIngredients || []).map(item => item.id)]);
+      const remap = {};
+      source.customIngredients = (source.customIngredients || []).map(item => {
+        if (item.id >= CUSTOM_INGREDIENT_START && !baseIds.has(item.id)) return item;
+        if (!baseIds.has(item.id) && item.id >= 1000) return item;
+        let id = Math.max(CUSTOM_INGREDIENT_START - 1, ...used) + 1;
+        while (used.has(id)) id++;
+        used.add(id);
+        remap[item.id] = id;
+        return { ...item, id };
+      });
+      if (!Object.keys(remap).length) return;
+      (source.customFoods || []).forEach(food => {
+        (food.recipe?.items || []).forEach(recipeItem => {
+          if (remap[recipeItem.ingredientId]) recipeItem.ingredientId = remap[recipeItem.ingredientId];
+        });
+      });
+      const overrides = {};
+      Object.entries(source.ingredientOverrides || {}).forEach(([id, item]) => {
+        if (!remap[id]) overrides[id] = item;
+      });
+      source.ingredientOverrides = overrides;
     }
 
     function resetFoods(source = state) {
@@ -1169,8 +1229,8 @@
           <div>
             <div class="userbar" style="justify-content:flex-end">${languageSelect()}</div>
             <div class="brand">Fit <span>Calendar</span></div>
-            <h1>دفترچه هوشمند رژیم و پیشرفت</h1>
-            <p class="muted">اول مشخصات بدن را می‌گیرد، گزارش و هدف امن پیشنهاد می‌دهد، بعد لاگ روزانه غذا، آب، قدم، ورزش و وزن را با نمودارهای هدف و عملکرد نشان می‌دهد.</p>
+            <h1>${lang() === "fa" ? "دفترچه هوشمند رژیم و پیشرفت" : lang() === "fi" ? "Älykäs ruokavalio- ja edistymispäiväkirja" : "Smart diet and progress journal"}</h1>
+            <p class="muted">${lang() === "fa" ? "اول مشخصات بدن را می‌گیرد، گزارش و هدف امن پیشنهاد می‌دهد، بعد لاگ روزانه غذا، آب، قدم، ورزش و وزن را با نمودارهای هدف و عملکرد نشان می‌دهد." : lang() === "fi" ? "Ensin se kerää kehon perustiedot, antaa turvallisen tavoiteraportin ja näyttää sitten ruoan, veden, askeleet, liikunnan ja painon seurannan tavoitekaavioilla." : "It starts with your body profile, suggests a safe goal, then tracks food, water, steps, exercise and weight with progress charts."}</p>
           </div>
           <div class="visual-stack">
             <div class="hero-panel">
@@ -1187,13 +1247,13 @@
           </div>
         </section>
         <section class="card">
-          <h2>ورود یا ساخت حساب</h2>
-          <p class="muted">ثبت‌نام واقعی است؛ اطلاعات هر کاربر خصوصی و جدا در اکانت خودش ذخیره می‌شود.</p>
-          <label>ایمیل</label><input id="email" type="email" placeholder="name@example.com">
-          <label>پسورد</label><input id="password" type="password" placeholder="حداقل ۶ کاراکتر">
+          <h2>${lang() === "fa" ? "ورود یا ساخت حساب" : lang() === "fi" ? "Kirjaudu tai luo tili" : "Log in or create account"}</h2>
+          <p class="muted">${lang() === "fa" ? "ثبت‌نام واقعی است؛ اطلاعات هر کاربر خصوصی و جدا در اکانت خودش ذخیره می‌شود." : lang() === "fi" ? "Tilit ovat oikeita; jokaisen käyttäjän tiedot tallennetaan yksityisesti omaan tiliin." : "Accounts are real; each user's data is private and stored separately in their own account."}</p>
+          <label>${t("email")}</label><input id="email" type="email" placeholder="name@example.com">
+          <label>${t("password")}</label><input id="password" type="password" placeholder="${lang() === "fa" ? "حداقل ۶ کاراکتر" : lang() === "fi" ? "vähintään 6 merkkiä" : "at least 6 characters"}">
           <div class="grid" style="margin-top:12px">
-            <button onclick="signup()">ساخت حساب</button>
-            <button class="secondary" onclick="login()">ورود</button>
+            <button onclick="signup()">${t("signup")}</button>
+            <button class="secondary" onclick="login()">${t("login")}</button>
           </div>
           <p id="authMessage" class="notice hidden"></p>
         </section>
@@ -1506,12 +1566,12 @@
         <div id="dailyMetrics" class="metrics-board">${dailyMetrics()}</div>
         <div class="workspace" style="margin-top:16px">
           <aside class="card">
-            <h2>دیتابیس غذا</h2>
-            <p class="muted">روی غذا کلیک کن یا کارت را بکش داخل لاگ. غذای جدید هم می‌توانی به دیتابیس اضافه کنی.</p>
-            <label>جستجو</label><input id="foodSearch" oninput="renderFoods()" placeholder="مثلاً مرغ، برنج، سیب">
+            <h2>${t("foodDb")}</h2>
+            <p class="muted">${lang() === "fa" ? "روی غذا کلیک کن یا کارت را بکش داخل لاگ. غذای جدید هم می‌توانی به دیتابیس اضافه کنی." : lang() === "fi" ? "Klikkaa ruokaa tai vedä kortti päiväkirjaan. Voit myös lisätä omia ruokia tietokantaan." : "Click a food or drag its card into the daily log. You can also add your own foods to the database."}</p>
+            <label>${t("search")}</label><input id="foodSearch" oninput="renderFoods()" placeholder="${lang() === "fa" ? "مثلاً مرغ، برنج، سیب" : lang() === "fi" ? "esim. kana, riisi, omena" : "e.g. chicken, rice, apple"}">
             <div class="food-buttons">
-              <button class="secondary" onclick="openFoodModal()">افزودن غذای جدید</button>
-              <button onclick="openRecipeModal()">آشپزی</button>
+              <button class="secondary" onclick="openFoodModal()">${t("addFood")}</button>
+              <button onclick="openRecipeModal()">${t("cooking")}</button>
             </div>
             <div id="foodTabs" class="food-tabs">${foodTabs()}</div>
             <div id="foodList" class="food-list" style="margin-top:12px"></div>
@@ -1772,7 +1832,7 @@
         const matchesSearch = nameMatches(food, q);
         const matchesTab = active === "all" || (active === "custom" ? isCustomFood(food.id) : getFoodCategory(food) === active);
         return matchesSearch && matchesTab;
-      }).slice(0, 120);
+      });
       if (!list.length) {
         $("#foodList").innerHTML = `<div class="notice">در این دسته هنوز غذایی پیدا نشد.</div>`;
         return;
@@ -2097,7 +2157,7 @@
       const editingId = Number($("#editingFoodId").value || 0);
       const name = $("#newFoodName").value.trim();
       if (!name) return;
-      const id = editingId || Math.max(...foods.map(food => food.id)) + 1;
+      const id = editingId || nextSafeId(state.customFoods || [], CUSTOM_FOOD_START);
       const previousFood = foods.find(item => item.id === id);
       const food = {
         id,
@@ -2334,7 +2394,7 @@
       if (!name) return;
       const { perUnit, servings, items } = calculateRecipe();
       if (!items.length) return;
-      const id = editingId || Math.max(0, ...foods.map(food => food.id)) + 1;
+      const id = editingId || nextSafeId(state.customFoods || [], CUSTOM_FOOD_START);
       const food = {
         id,
         name,
@@ -2398,7 +2458,7 @@
       const editingId = Number($("#editingIngredientId").value || 0);
       const name = $("#newIngredientName").value.trim();
       if (!name) return;
-      const id = editingId || Math.max(0, ...rawIngredients.map(item => item.id)) + 1;
+      const id = editingId || nextSafeId(state.customIngredients || [], CUSTOM_INGREDIENT_START);
       const item = {
         id,
         name,
