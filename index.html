@@ -157,7 +157,7 @@
       border-radius: 50%;
       display: grid;
       place-items: center;
-      background: conic-gradient(var(--status) var(--p), #e9eee5 0);
+      background: var(--ring-bg, conic-gradient(var(--status) var(--p), #e9eee5 0));
       color: var(--ink);
       font-weight: 900;
       position: relative;
@@ -175,6 +175,7 @@
     .metric.summary.good { --status: var(--green); }
     .metric.summary.warn { --status: var(--amber); }
     .metric.summary.bad { --status: var(--red); }
+    .metric.summary.over { --status: var(--green); }
 
     table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
     th, td { border-bottom: 1px solid var(--line); padding: 9px; text-align: right; font-size: 13px; vertical-align: middle; }
@@ -235,11 +236,18 @@
     .water { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
     .water button { background: white; color: var(--blue); border: 1px solid var(--line); aspect-ratio: 1; padding: 0; }
     .water button.on { background: #dff1ff; border-color: #8fc8ec; }
-    .date-strip { display: grid; grid-template-columns: 42px 1fr 42px; gap: 10px; align-items: stretch; margin: 10px 0 16px; }
+    .date-strip { display: grid; grid-template-columns: 42px 1fr 42px 76px; gap: 10px; align-items: stretch; margin: 10px 0 16px; }
     .date-strip > button { padding: 0; font-size: 22px; }
+    .date-strip .today-btn { font-size: 13px; padding: 0 10px; }
     .date-rail { display: grid; grid-template-columns: repeat(9, minmax(86px, 1fr)); gap: 8px; overflow-x: auto; direction: ltr; }
     .day-card { background: rgba(255,255,255,.75); color: var(--ink); border: 1px solid var(--line); box-shadow: none; padding: 8px; min-height: 68px; direction: rtl; }
+    .day-card.past { background: #f3e8e5; border-color: #e3c9c4; color: #5b3731; }
+    .day-card.future { background: #ecefed; border-color: #d7ddd9; color: #4c5650; }
+    .day-card.today { background: #dfecdf; border-color: #bed6c0; color: #214b31; }
     .day-card.active { background: linear-gradient(135deg, var(--green), #2f8a62); color: white; border-color: var(--green); }
+    .day-card.active.past { background: linear-gradient(135deg, #8b4b43, #b6675b); }
+    .day-card.active.future { background: linear-gradient(135deg, #59635d, #78857d); }
+    .day-card.active.today { background: linear-gradient(135deg, var(--green), #2f8a62); }
     .day-card small, .day-card span { display: block; font-size: 11px; }
     .day-card span { margin-top: 5px; font-weight: 900; }
     .tracker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -1113,6 +1121,18 @@
       return state.logs[state.currentDate];
     }
 
+    function previousWeightBefore(date) {
+      return Object.values(state.logs || {})
+        .filter(log => log.date < date && log.weight !== "" && log.weight !== null && log.weight !== undefined)
+        .sort((a, b) => b.date.localeCompare(a.date))[0]?.weight || "";
+    }
+
+    function displayWeightFor(date = state.currentDate) {
+      const log = state.logs[date];
+      if (log && log.weight !== "" && log.weight !== null && log.weight !== undefined) return log.weight;
+      return previousWeightBefore(date);
+    }
+
     function totals(log = currentLog()) {
       return log.entries.reduce((sum, e) => {
         const food = foods.find(x => x.id === e.foodId);
@@ -1132,6 +1152,7 @@
       const log = currentLog();
       const t = totals(log);
       const plan = currentPlanFor(state.currentDate);
+      const weightValue = displayWeightFor(state.currentDate);
       page(`${topbar(`<button class="ghost" onclick="showProfile()">اصلاح پروفایل</button>`)}${steps(5)}
         <div id="dailyMetrics" class="metrics-board">${dailyMetrics()}</div>
         <div class="workspace" style="margin-top:16px">
@@ -1162,7 +1183,7 @@
                 ${tracker("exercise", "ورزش امروز", log.exercise || 0, plan.exercise || 30, "دقیقه", 5)}
               </div>
               <div class="grid-3" style="margin-top:12px">
-                <div><label>وزن امروز (kg)</label><input id="weightInput" type="number" step="0.1" value="${log.weight || ""}" onchange="setDaily('weight', this.value)"></div>
+                <div><label>وزن امروز (kg)</label><input id="weightInput" type="number" step="0.1" value="${weightValue}" onchange="setDaily('weight', this.value)"></div>
               </div>
             </div>
             <div class="card" style="margin-top:16px">
@@ -1217,10 +1238,16 @@
     function metric(label, actual, target, unit) {
       const ratio = target ? actual / target : 0;
       const isCalories = label === "کالری";
-      const cls = isCalories
+      const isOver = ratio > 1;
+      const cls = isOver ? "over" : (isCalories
         ? (ratio > 1.05 ? "bad" : ratio >= .85 ? "good" : "warn")
-        : (ratio >= 1 ? "good" : "warn");
+        : (ratio >= 1 ? "good" : "warn"));
       const percent = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+      const shownPercent = Math.max(0, Math.round(ratio * 100));
+      const overPercent = Math.max(0, Math.min(100, Math.round((ratio - 1) * 100)));
+      const ringBg = isOver
+        ? `conic-gradient(var(--red) 0 ${overPercent}%, var(--green) ${overPercent}% 100%)`
+        : `conic-gradient(var(--status) ${percent}%, #e9eee5 0)`;
       const digits = label === "قدم" || label === "ورزش" || label === "آب" ? 0 : 1;
       return `<div class="metric summary ${cls}">
         <div>
@@ -1228,7 +1255,7 @@
           <b>${f(actual, digits)} ${unit}</b>
           <span class="tiny">هدف: ${f(target, 0)} ${unit}</span>
         </div>
-        <div class="metric-ring" style="--p:${percent}%"><span>${percent}</span></div>
+        <div class="metric-ring" style="--p:${percent}%;--ring-bg:${ringBg}"><span>${shownPercent}</span></div>
       </div>`;
     }
 
@@ -1247,18 +1274,21 @@
 
     function dateStrip() {
       const days = dateRange(addDays(state.currentDate, -4), addDays(state.currentDate, 4));
+      const today = isoToday();
       return `<div class="date-strip">
         <button class="secondary" onclick="shiftDate(-1)">‹</button>
         <div class="date-rail">
           ${days.map(date => {
             const total = totals(state.logs[date] || { entries: [] }).cal;
-            return `<button class="day-card ${date === state.currentDate ? "active" : ""}" onclick="changeDate('${date}')">
+            const tone = date === today ? "today" : (date < today ? "past" : "future");
+            return `<button class="day-card ${tone} ${date === state.currentDate ? "active" : ""}" onclick="changeDate('${date}')">
               <small>${weekday(date)} ${date.slice(5)}</small>
               <span>${f(total, 0)} kcal</span>
             </button>`;
           }).join("")}
         </div>
         <button class="secondary" onclick="shiftDate(1)">›</button>
+        <button class="secondary today-btn" onclick="goToday()">امروز</button>
       </div>`;
     }
 
@@ -1509,6 +1539,10 @@
       showApp();
     }
 
+    function goToday() {
+      changeDate(isoToday());
+    }
+
     function shiftDate(days) {
       changeDate(addDays(state.currentDate, days));
     }
@@ -1536,7 +1570,7 @@
     function dailyRows() {
       return Object.values(state.logs).sort((a, b) => a.date.localeCompare(b.date)).map(log => {
         const t = totals(log);
-        return { date: log.date, ...t, water: log.water || 0, steps: log.steps || 0, exercise: log.exercise || 0, weight: Number(log.weight || 0) };
+        return { date: log.date, ...t, water: log.water || 0, steps: log.steps || 0, exercise: log.exercise || 0, weight: Number(displayWeightFor(log.date) || 0) };
       });
     }
 
@@ -1602,7 +1636,7 @@
         water: 0,
         steps: 0,
         exercise: 0,
-        weight: 0
+        weight: Number(displayWeightFor(date) || 0)
       });
     }
 
@@ -1698,6 +1732,7 @@
           </div>
           <div class="grid" style="margin-top:14px">
             <button onclick="saveFood()">${food ? "ذخیره تغییرات" : "افزودن به لیست"}</button>
+            ${food?.recipe ? `<button class="ghost" onclick="closeFoodModal(); openRecipeModal(${food.id})">ویرایش رسپی آشپزی</button>` : ""}
             <button class="secondary" onclick="closeFoodModal()">انصراف</button>
           </div>
         </div>
@@ -1714,6 +1749,7 @@
       const name = $("#newFoodName").value.trim();
       if (!name) return;
       const id = editingId || Math.max(...foods.map(food => food.id)) + 1;
+      const previousFood = foods.find(item => item.id === id);
       const food = {
         id,
         name,
@@ -1726,6 +1762,7 @@
         unit: $("#newFoodCustomUnit").value.trim() || $("#newFoodUnit").value || "۱۰۰ گرم",
         category: $("#newFoodCategory").value || "meal"
       };
+      if (previousFood?.recipe) food.recipe = previousFood.recipe;
       const existingIndex = foods.findIndex(item => item.id === id);
       if (existingIndex >= 0) foods[existingIndex] = food;
       else foods.push(food);
@@ -1792,16 +1829,23 @@
       </div>`;
     }
 
-    function openRecipeModal() {
+    function openRecipeModal(foodId = null) {
+      const editingFood = foodId ? foods.find(food => food.id === foodId) : null;
+      const recipe = editingFood?.recipe || null;
+      const recipeUnit = editingFood ? foodUnit(editingFood) : "۱ پرس";
+      const recipeRows = recipe?.items?.length
+        ? recipe.items.map(item => recipeRowHtml(item.ingredientId, item.amount)).join("")
+        : `${recipeRowHtml(1, 3)}${recipeRowHtml(14, 2)}${recipeRowHtml(33, 1)}`;
       document.body.insertAdjacentHTML("beforeend", `<div class="modal-backdrop" id="recipeModal">
         <div class="modal wide">
-          <h2>آشپزی و ساخت غذای جدید</h2>
+          <h2>${editingFood ? "ویرایش رسپی آشپزی" : "آشپزی و ساخت غذای جدید"}</h2>
           <p class="muted">مواد اولیه را از پنل انتخاب کن یا بکش داخل دستور پخت. بعد مقدار هر ماده و تعداد واحد خروجی غذا را وارد کن تا ارزش غذایی هر واحد محاسبه شود.</p>
+          <input id="editingRecipeFoodId" type="hidden" value="${editingFood?.id || ""}">
           <div class="grid-3">
-            <div><label>نام غذای پخته‌شده</label><input id="recipeFoodName" placeholder="مثلاً قورمه سبزی خانگی"></div>
-            <div><label>واحد غذای نهایی</label><select id="recipeFoodUnit" onchange="updateRecipePreview()">${unitOptions("۱ پرس")}</select></div>
-            <div><label>واحد دلخواه</label><input id="recipeCustomUnit" placeholder="مثلاً ۱ کاسه بزرگ" oninput="updateRecipePreview()"></div>
-            <div><label>کل غذا چند واحد شد؟</label><input id="recipeYield" type="number" min="0.1" step="0.1" value="4" oninput="updateRecipePreview()"></div>
+            <div><label>نام غذای پخته‌شده</label><input id="recipeFoodName" placeholder="مثلاً قورمه سبزی خانگی" value="${esc(editingFood?.name || "")}"></div>
+            <div><label>واحد غذای نهایی</label><select id="recipeFoodUnit" onchange="updateRecipePreview()">${unitOptions(recipeUnit)}</select></div>
+            <div><label>واحد دلخواه</label><input id="recipeCustomUnit" placeholder="مثلاً ۱ کاسه بزرگ" value="${isKnownUnit(recipeUnit) ? "" : esc(recipeUnit)}" oninput="updateRecipePreview()"></div>
+            <div><label>کل غذا چند واحد شد؟</label><input id="recipeYield" type="number" min="0.1" step="0.1" value="${recipe?.servings || 1}" oninput="updateRecipePreview()"></div>
           </div>
           <div class="recipe-builder" style="margin-top:16px">
             <aside class="flat card">
@@ -1818,15 +1862,13 @@
               <h3>دستور پخت</h3>
               <div id="recipeDropzone" class="dropzone">ماده اولیه را اینجا رها کن یا از پنل کلیک کن</div>
               <div id="recipeRows">
-                ${recipeRowHtml(1, 3)}
-                ${recipeRowHtml(14, 2)}
-                ${recipeRowHtml(33, 1)}
+                ${recipeRows}
               </div>
               <div id="recipeSummary" class="recipe-summary"></div>
             </section>
           </div>
           <div class="grid" style="margin-top:14px">
-            <button onclick="saveRecipeFood()">ذخیره به غذاهای من</button>
+            <button onclick="saveRecipeFood()">${editingFood ? "ذخیره تغییرات رسپی" : "ذخیره به غذاهای من"}</button>
             <button class="secondary" onclick="closeRecipeModal()">انصراف</button>
           </div>
         </div>
@@ -1938,11 +1980,12 @@
     }
 
     function saveRecipeFood() {
+      const editingId = Number($("#editingRecipeFoodId")?.value || 0);
       const name = $("#recipeFoodName").value.trim();
       if (!name) return;
       const { perUnit, servings, items } = calculateRecipe();
       if (!items.length) return;
-      const id = Math.max(0, ...foods.map(food => food.id)) + 1;
+      const id = editingId || Math.max(0, ...foods.map(food => food.id)) + 1;
       const food = {
         id,
         name,
@@ -1954,10 +1997,14 @@
         water: perUnit.water,
         unit: $("#recipeCustomUnit").value.trim() || $("#recipeFoodUnit").value || "۱ پرس",
         category: "meal",
-        recipe: { servings, items, createdAt: isoToday() }
+        recipe: { servings, items, createdAt: foods.find(item => item.id === id)?.recipe?.createdAt || isoToday(), updatedAt: isoToday() }
       };
-      foods.push(food);
-      state.customFoods.push(food);
+      const foodIndex = foods.findIndex(item => item.id === id);
+      if (foodIndex >= 0) foods[foodIndex] = food;
+      else foods.push(food);
+      const customIndex = state.customFoods.findIndex(item => item.id === id);
+      if (customIndex >= 0) state.customFoods[customIndex] = food;
+      else state.customFoods.push(food);
       state.foodTab = "custom";
       save();
       closeRecipeModal();
