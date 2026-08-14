@@ -1285,18 +1285,28 @@
         return;
       }
       setAuthMessage(lang() === "en" ? "Creating account..." : lang() === "fi" ? "Luodaan tiliä..." : "در حال ساخت حساب...", true);
-      const { data, error } = await db.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: location.origin }
-      });
+      let data, error;
+      try {
+        ({ data, error } = await withTimeout(db.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: location.origin }
+        }), 12000));
+      } catch (requestError) {
+        setAuthMessage(lang() === "en" ? "Signup request timed out. Check your connection and try again." : lang() === "fi" ? "Tilin luonti aikakatkaistiin. Tarkista yhteys ja yritä uudelleen." : "درخواست ساخت حساب گیر کرد. اینترنت را چک کن و دوباره تلاش کن.");
+        return;
+      }
       if (error) {
         setAuthMessage(error.message);
         return;
       }
       if (data.session?.user) {
-        await loadUserState(data.session.user);
-        showProfile();
+        try {
+          await loadUserState(data.session.user);
+          showProfile();
+        } catch (error) {
+          setAuthMessage(lang() === "en" ? "Account was created, but loading its data failed. Try logging in again." : lang() === "fi" ? "Tili luotiin, mutta tietojen lataus epäonnistui. Kirjaudu uudelleen." : "حساب ساخته شد، ولی بارگذاری اطلاعاتش گیر کرد. یک بار دوباره وارد شو.");
+        }
       } else {
         setAuthMessage(lang() === "en" ? "Account created. If email confirmation is enabled, confirm your email and then log in." : lang() === "fi" ? "Tili luotu. Jos sähköpostivahvistus on käytössä, vahvista sähköposti ja kirjaudu sitten." : "حساب ساخته شد. اگر Supabase تایید ایمیل را فعال کرده باشد، ایمیلت را تایید کن و بعد وارد شو.", true);
       }
@@ -1310,15 +1320,26 @@
         return;
       }
       setAuthMessage(lang() === "en" ? "Logging in..." : lang() === "fi" ? "Kirjaudutaan..." : "در حال ورود...", true);
-      const { data, error } = await db.auth.signInWithPassword({ email, password });
+      let data, error;
+      try {
+        ({ data, error } = await withTimeout(db.auth.signInWithPassword({ email, password }), 12000));
+      } catch (requestError) {
+        setAuthMessage(lang() === "en" ? "Login request timed out. Check your connection and try again." : lang() === "fi" ? "Kirjautuminen aikakatkaistiin. Tarkista yhteys ja yritä uudelleen." : "درخواست ورود گیر کرد. اینترنت را چک کن و دوباره تلاش کن.");
+        return;
+      }
       if (error) {
         setAuthMessage(lang() === "en" ? "Login failed. Check email/password or email confirmation." : lang() === "fi" ? "Kirjautuminen epäonnistui. Tarkista sähköposti/salasana tai vahvistus." : "ورود ناموفق بود. ایمیل/پسورد یا تایید ایمیل را چک کن.");
         return;
       }
-      await loadUserState(data.user);
-      if (!state.profile) showProfile();
-      else if (!currentPlanFor(state.currentDate)) showReport();
-      else showApp();
+      try {
+        await loadUserState(data.user);
+        if (!state.profile) showProfile();
+        else if (!currentPlanFor(state.currentDate)) showReport();
+        else showApp();
+      } catch (loadError) {
+        console.error(loadError);
+        setAuthMessage(lang() === "en" ? "Login succeeded, but loading saved data failed. Try again in a moment." : lang() === "fi" ? "Kirjautuminen onnistui, mutta tallennettujen tietojen lataus epäonnistui. Yritä hetken päästä uudelleen." : "ورود موفق بود، ولی بارگذاری اطلاعات ذخیره‌شده گیر کرد. چند لحظه بعد دوباره تلاش کن.");
+      }
     }
 
     async function logout() {
