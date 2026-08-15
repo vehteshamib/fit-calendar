@@ -240,13 +240,14 @@
     svg { width: 100%; height: 240px; background: linear-gradient(180deg, #ffffff, #fbfcf8); border: 1px solid var(--line); border-radius: 8px; }
     .axis { stroke: #d6ddd2; stroke-dasharray: 3 3; }
     .actual-bar { fill: var(--blue); opacity: .82; rx: 3; }
+    .actual-line { fill: none; stroke: var(--blue); stroke-width: 3; }
     .target { fill: none; stroke: var(--red); stroke-width: 2.4; }
     .legend { display: flex; gap: 16px; color: var(--muted); font-size: 12px; margin-top: 6px; }
     .legend i { width: 22px; height: 3px; display: inline-block; margin-left: 6px; vertical-align: middle; }
     .water { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
     .water button { background: white; color: var(--blue); border: 1px solid var(--line); aspect-ratio: 1; padding: 0; }
     .water button.on { background: #dff1ff; border-color: #8fc8ec; }
-    .date-strip { display: grid; grid-template-columns: 42px 1fr 42px 76px; gap: 10px; align-items: stretch; margin: 10px 0 16px; }
+    .date-strip { display: grid; grid-template-columns: 42px 1fr 42px 76px; gap: 10px; align-items: stretch; margin: 10px 0 16px; direction: ltr; }
     .date-strip > button { padding: 0; font-size: 22px; }
     .date-strip .today-btn { font-size: 13px; padding: 0 10px; }
     .date-rail { display: grid; grid-template-columns: repeat(9, minmax(86px, 1fr)); gap: 8px; overflow-x: auto; direction: ltr; }
@@ -2452,9 +2453,8 @@
     function dateStrip() {
       const days = dateRange(addDays(state.currentDate, -4), addDays(state.currentDate, 4));
       const today = isoToday();
-      const isRtl = lang() === "fa";
       return `<div class="date-strip">
-        <button class="secondary" onclick="shiftDate(${isRtl ? 1 : -1})">${isRtl ? "›" : "‹"}</button>
+        <button class="secondary" onclick="shiftDate(-1)">‹</button>
         <div class="date-rail">
           ${days.map(date => {
             const total = totals(state.logs[date] || { entries: [] }).cal;
@@ -2465,7 +2465,7 @@
             </button>`;
           }).join("")}
         </div>
-        <button class="secondary" onclick="shiftDate(${isRtl ? -1 : 1})">${isRtl ? "‹" : "›"}</button>
+        <button class="secondary" onclick="shiftDate(1)">›</button>
         <button class="secondary today-btn" onclick="goToday()">${t("today")}</button>
       </div>`;
     }
@@ -2834,25 +2834,27 @@
 
     function chart(title, rows, key, targetKey) {
       const targetValues = targetKey ? rows.map(r => Number(currentPlanFor(r.date)?.[targetKey] || 0)) : [];
-      const max = niceMax(Math.max(1, ...rows.map(r => Number(r[key] || 0)), ...targetValues));
+      const scale = chartScale(rows, key, targetValues);
       const plotLeft = 72;
       const plotRight = 610;
       const plotTop = 34;
       const plotBottom = 205;
       const x = (i) => plotLeft + i * ((plotRight - plotLeft) / Math.max(1, rows.length - 1));
-      const y = (v) => plotBottom - (Number(v || 0) / max) * (plotBottom - plotTop);
+      const y = (v) => plotBottom - ((Number(v || 0) - scale.min) / Math.max(1, scale.max - scale.min)) * (plotBottom - plotTop);
       const barWidth = Math.max(4, Math.min(28, (plotRight - plotLeft) / Math.max(1, rows.length) * .58));
-      const actualBars = rows.map((r, i) => {
-        const value = Number(r[key] || 0);
-        const top = y(value);
-        const height = Math.max(0, plotBottom - top);
-        return `<rect class="actual-bar" x="${x(i) - barWidth / 2}" y="${top}" width="${barWidth}" height="${height}"></rect>`;
-      }).join("");
+      const actualVisual = key === "weight"
+        ? `<polyline class="actual-line" points="${rows.map((r, i) => ({ value: Number(r[key] || 0), i })).filter(p => p.value > 0).map(p => `${x(p.i)},${y(p.value)}`).join(" ")}"></polyline>`
+        : rows.map((r, i) => {
+            const value = Number(r[key] || 0);
+            const top = y(value);
+            const height = Math.max(0, plotBottom - top);
+            return `<rect class="actual-bar" x="${x(i) - barWidth / 2}" y="${top}" width="${barWidth}" height="${height}"></rect>`;
+          }).join("");
       const goalLine = targetKey && rows.length ? `<polyline class="target" points="${stepPoints(rows, x, y, targetKey)}"/>` : "";
       const ticks = [0, .25, .5, .75, 1].map(part => {
-        const value = max * part;
+        const value = scale.min + (scale.max - scale.min) * part;
         const yy = y(value);
-        return `<line class="axis" x1="${plotLeft}" y1="${yy}" x2="${plotRight}" y2="${yy}"></line><text class="axis-value" x="${plotLeft - 10}" y="${yy + 4}" text-anchor="end">${f(value, value < 10 ? 1 : 0)}</text>`;
+        return `<line class="axis" x1="${plotLeft}" y1="${yy}" x2="${plotRight}" y2="${yy}"></line><text class="axis-value" x="${plotLeft - 10}" y="${yy + 4}" text-anchor="end">${f(value, key === "weight" || value < 10 ? 1 : 0)}</text>`;
       }).join("");
       const xLabels = rows.length ? rows
         .map((r, i) => ({ r, i }))
@@ -2864,12 +2866,28 @@
         <svg viewBox="0 0 630 235" role="img" aria-label="${L("نمودار", "Chart", "Kaavio")} ${title}">
           ${ticks}
           <line class="axis" x1="${plotLeft}" y1="${plotTop}" x2="${plotLeft}" y2="${plotBottom}"></line>
-          ${actualBars}
+          ${actualVisual}
           ${goalLine}
           ${xLabels}
         </svg>
         <div class="legend"><span><i style="background:var(--blue)"></i>${L("مصرف", "Consumed", "Toteutunut")}</span>${targetKey ? `<span><i style="background:var(--red)"></i>${t("target")}</span>` : ""}</div>
       </div>`;
+    }
+
+    function chartScale(rows, key, targetValues) {
+      if (key === "weight") {
+        const values = rows.map(r => Number(r.weight || 0)).filter(v => v > 0);
+        if (!values.length) return { min: 0, max: 1 };
+        const low = Math.min(...values);
+        const high = Math.max(...values);
+        const range = Math.max(0.1, high - low);
+        const pad = Math.max(0.5, range * 0.2);
+        return {
+          min: Math.max(0, Math.floor((low - pad) * 10) / 10),
+          max: Math.ceil((high + pad) * 10) / 10
+        };
+      }
+      return { min: 0, max: niceMax(Math.max(1, ...rows.map(r => Number(r[key] || 0)), ...targetValues)) };
     }
 
     function stepPoints(rows, x, y, targetKey) {
