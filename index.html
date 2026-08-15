@@ -95,6 +95,10 @@
     }
     .userbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .pill { border: 1px solid var(--line); background: rgba(255,255,255,.8); border-radius: 999px; padding: 9px 13px; color: var(--muted); }
+    .sync-pill { border-radius: 999px; padding: 8px 11px; font-size: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.82); color: var(--muted); }
+    .sync-pill.saved { border-color: #a8d7b9; background: #edf8f0; color: #1f6b4d; }
+    .sync-pill.saving { border-color: #e2c681; background: #fff7df; color: #8a5d14; }
+    .sync-pill.error { border-color: #e3afa8; background: #fff0ee; color: #a3372e; }
     .lang-select { width: auto; min-width: 118px; padding: 8px 10px; background: rgba(255,255,255,.86); }
 
     .card {
@@ -870,6 +874,7 @@
     let currentLang = localStorage.getItem("fitCalendarLang") || "fa";
     let state = defaultState();
     let saveTimer = null;
+    let syncInfo = { status: "idle", message: "" };
 
     function defaultState() {
       const currentDate = isoToday();
@@ -1025,40 +1030,100 @@
         visibleCharts: state.visibleCharts || defaultChartKeys(),
         logs: state.logs || {},
         currentDate: state.currentDate || isoToday(),
-        chartRange: state.chartRange || { from: addDays(state.currentDate || isoToday(), -30), to: state.currentDate || isoToday() }
+        chartRange: state.chartRange || { from: addDays(state.currentDate || isoToday(), -30), to: state.currentDate || isoToday() },
+        savedAt: state.savedAt || new Date().toISOString()
       };
+    }
+
+    function stateScore(data = {}) {
+      const logs = Object.values(data.logs || {});
+      const loggedEntries = logs.reduce((sum, log) => sum + (log.entries || []).length, 0);
+      const trackerDays = logs.filter(log => Number(log.water || 0) || Number(log.steps || 0) || Number(log.exercise || 0) || log.weight).length;
+      return (data.profile ? 20 : 0)
+        + ((data.plans || []).length * 8)
+        + (data.plan ? 8 : 0)
+        + (loggedEntries * 3)
+        + (trackerDays * 2)
+        + ((data.customFoods || []).length * 4)
+        + ((data.customIngredients || []).length * 3)
+        + Object.keys(data.foodOverrides || {}).length
+        + Object.keys(data.ingredientOverrides || {}).length;
+    }
+
+    function stateTime(data = {}, fallback = "") {
+      const value = data.savedAt || data.updatedAt || fallback || "";
+      const time = Date.parse(value);
+      return Number.isFinite(time) ? time : 0;
+    }
+
+    function bestLocalBackup(user) {
+      const candidates = [
+        `${storeKey}:${user.id}`,
+        `fitCalendarLocalV2:${user.id}`,
+        `fitCalendarLocalV1:${user.id}`,
+        storeKey,
+        "fitCalendarLocalV3",
+        "fitCalendarLocalV2",
+        "fitCalendarLocalV1",
+        "fitCalendarState"
+      ];
+      return candidates
+        .map(key => ({ key, data: safeJson(localStorage.getItem(key), null) }))
+        .filter(item => item.data && stateScore(item.data) > 0)
+        .sort((a, b) => (stateTime(b.data) - stateTime(a.data)) || (stateScore(b.data) - stateScore(a.data)))[0] || { key: "", data: null };
+    }
+
+    function chooseStateSource(localData, remoteData, remoteUpdatedAt = "") {
+      const localScore = stateScore(localData || {});
+      const remoteScore = stateScore(remoteData || {});
+      if (localScore && !remoteScore) return { source: "local", data: localData };
+      if (remoteScore && !localScore) return { source: "cloud", data: remoteData };
+      if (!localScore && !remoteScore) return { source: "empty", data: remoteData || localData || {} };
+      const localTime = stateTime(localData);
+      const remoteTime = stateTime(remoteData, remoteUpdatedAt);
+      if (localTime || remoteTime) return localTime >= remoteTime ? { source: "local", data: localData } : { source: "cloud", data: remoteData };
+      return localScore >= remoteScore ? { source: "local", data: localData } : { source: "cloud", data: remoteData };
     }
 
     async function loadUserState(user) {
       authUser = user;
-      const localBackup = safeJson(localStorage.getItem(`${storeKey}:${user.id}`), {});
+      const localBackup = bestLocalBackup(user);
       let remoteData = null;
+      let remoteUpdatedAt = "";
       let remoteOk = false;
       try {
         const { data, error } = await withTimeout(db
           .from("fit_calendar_states")
-          .select("data")
+          .select("data,updated_at")
           .eq("user_id", user.id)
           .maybeSingle(), 9000);
         if (error) throw error;
         remoteData = data?.data || null;
+        remoteUpdatedAt = data?.updated_at || "";
         remoteOk = true;
       } catch (error) {
         console.error("Remote state load failed", error);
+        syncInfo = { status: "error", message: L("اتصال ذخیره آنلاین برقرار نشد", "Cloud sync unavailable", "Pilvisynkronointi ei ole käytettävissä") };
       }
       try {
-        state = prepareState(remoteData || localBackup || {});
+        const chosen = chooseStateSource(localBackup.data, remoteData, remoteUpdatedAt);
+        state = prepareState(chosen.data || {});
+        if (remoteOk && chosen.source === "local") {
+          syncInfo = { status: "saving", message: L("در حال انتقال داده لپ‌تاپ به آنلاین", "Uploading local data", "Ladataan paikalliset tiedot pilveen") };
+          await saveNow();
+        } else if (remoteOk) {
+          syncInfo = { status: "saved", message: L("همگام با آنلاین", "Synced online", "Synkronoitu pilveen") };
+        }
       } catch (error) {
         console.error("State preparation failed, falling back to local/default", error);
         try {
-          state = prepareState(localBackup || {});
+          state = prepareState(localBackup.data || {});
         } catch (fallbackError) {
           console.error("Local backup failed", fallbackError);
           state = defaultState();
         }
       }
       state.user = { email: user.email };
-      if (remoteOk) saveNow().catch(error => console.error("Initial save failed", error));
     }
 
     function safeJson(raw, fallback = {}) {
@@ -1072,16 +1137,26 @@
     }
 
     async function saveNow() {
-      if (!authUser) return;
+      if (!authUser) return false;
+      syncInfo = { status: "saving", message: L("در حال ذخیره آنلاین", "Saving online", "Tallennetaan pilveen") };
       state.user = { email: authUser.email };
+      state.savedAt = new Date().toISOString();
       const payload = exportState();
       localStorage.setItem(`${storeKey}:${authUser.id}`, JSON.stringify(payload));
-      const { error } = await withTimeout(db.from("fit_calendar_states").upsert({
-        user_id: authUser.id,
-        data: payload,
-        updated_at: new Date().toISOString()
-      }), 9000);
-      if (error) console.error("Save failed", error);
+      try {
+        const { error } = await withTimeout(db.from("fit_calendar_states").upsert({
+          user_id: authUser.id,
+          data: payload,
+          updated_at: state.savedAt
+        }, { onConflict: "user_id" }).select("updated_at").single(), 9000);
+        if (error) throw error;
+        syncInfo = { status: "saved", message: L("ذخیره آنلاین شد", "Saved online", "Tallennettu pilveen") };
+        return true;
+      } catch (error) {
+        console.error("Save failed", error);
+        syncInfo = { status: "error", message: L("ذخیره آنلاین ناموفق بود", "Cloud save failed", "Pilvitallennus epäonnistui") };
+        return false;
+      }
     }
 
     function save() {
@@ -1827,12 +1902,24 @@
       applyLanguage();
     }
 
+    function syncBadge() {
+      if (!state.user) return "";
+      const status = syncInfo.status || "idle";
+      const text = syncInfo.message || L("آماده همگام‌سازی", "Ready to sync", "Valmis synkronointiin");
+      return `<span class="sync-pill ${status}">${text}</span><button class="ghost" onclick="manualSync()">${L("همگام‌سازی", "Sync now", "Synkronoi")}</button>`;
+    }
+
+    async function manualSync() {
+      await saveNow();
+      routeAfterAuth();
+    }
+
     function topbar(extra = "") {
       return `<div class="topbar">
         <div class="brand">Fit <span>Calendar</span></div>
         <div class="userbar">
           ${languageSelect()}
-          ${state.user ? `<span class="pill">${state.user.email}</span><button class="secondary" onclick="logout()">${t("logout")}</button>` : ""}
+          ${state.user ? `<span class="pill">${state.user.email}</span>${syncBadge()}<button class="secondary" onclick="logout()">${t("logout")}</button>` : ""}
           ${extra}
         </div>
       </div>`;
