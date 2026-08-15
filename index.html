@@ -149,6 +149,7 @@
     .metric.good b { color: var(--green); }
     .metric.warn b { color: var(--amber); }
     .metric.bad b { color: var(--red); }
+    .metric-note { display: block; margin-top: 7px; color: var(--red); font-size: 12px; line-height: 1.6; }
     .metrics-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .metric.summary {
       min-height: 118px;
@@ -2225,8 +2226,14 @@
 
     function previewGoal() {
       const p = buildPlanFromInputs();
+      const minCalories = minimumRecommendedCalories(state.profile);
+      const lowCalorieWarning = p.calories < minCalories ? `<span class="metric-note">${L(
+        `کالری زیر ${minCalories} کیلوکالری در روز معمولاً توصیه نمی‌شود؛ بهتر است با پزشک یا متخصص تغذیه چک شود.`,
+        `Calories below ${minCalories} kcal/day are usually not recommended; it is better to check this with a doctor or dietitian.`,
+        `Alle ${minCalories} kcal/päivä ei yleensä suositella; tämä kannattaa tarkistaa lääkärin tai ravitsemusterapeutin kanssa.`
+      )}</span>` : "";
       $("#goalPreview").innerHTML = `<div class="grid-4">
-        <div class="metric"><small>${t("calories")}</small><b>${f(p.calories)} kcal</b></div>
+        <div class="metric ${p.calories < minCalories ? "bad" : ""}"><small>${t("calories")}</small><b>${f(p.calories)} kcal</b>${lowCalorieWarning}</div>
         <div class="metric"><small>${t("protein")}</small><b>${f(p.protein)} g</b></div>
         <div class="metric"><small>${t("fat")}</small><b>${f(p.fat)} g</b></div>
         <div class="metric"><small>${t("carbs")}</small><b>${f(p.carbs)} g</b></div>
@@ -2246,11 +2253,15 @@
       const exerciseCaloriesValue = exerciseCalories(profile, exercise);
       const maintenance = bmr + baseLiving + walking + exerciseCaloriesValue;
       const deficit = Math.max(0, monthlyLoss) * 7700 / 30;
-      const calories = Math.max(profile.gender === "female" ? 1200 : 1500, Math.round(maintenance - deficit));
+      const calories = Math.round(maintenance - deficit);
       const protein = Math.round(Math.max(1.6 * idealTarget, 1.2 * profile.weight));
       const fat = Math.round(Math.max(45, calories * 0.27 / 9));
       const carbs = Math.round(Math.max(90, (calories - protein * 4 - fat * 9) / 4));
       return { calories, protein, fat, carbs, fiber: 30, waterGlasses: 8, steps, exercise, bmr, baseLiving, walkingCalories: walking, exerciseCalories: exerciseCaloriesValue, maintenance, deficit };
+    }
+
+    function minimumRecommendedCalories(profile) {
+      return profile?.gender === "female" ? 1200 : 1500;
     }
 
     function calcBmr(profile) {
