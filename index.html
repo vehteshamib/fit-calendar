@@ -1959,8 +1959,8 @@
           <label>${t("email")}</label><input id="email" type="email" placeholder="name@example.com">
           <label>${t("password")}</label><input id="password" type="password" placeholder="${lang() === "fa" ? "حداقل ۶ کاراکتر" : lang() === "fi" ? "vähintään 6 merkkiä" : "at least 6 characters"}">
           <div class="grid" style="margin-top:12px">
-            <button onclick="signup()">${t("signup")}</button>
-            <button class="secondary" onclick="login()">${t("login")}</button>
+            <button onclick="login()">${t("login")}</button>
+            <button class="secondary" onclick="signup()">${t("signup")}</button>
           </div>
           <p id="authMessage" class="notice hidden"></p>
         </section>
