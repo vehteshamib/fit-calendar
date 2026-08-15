@@ -1148,15 +1148,19 @@
           user_id: authUser.id,
           data: payload,
           updated_at: state.savedAt
-        }, { onConflict: "user_id" }).select("updated_at").single(), 9000);
+        }, { onConflict: "user_id" }), 9000);
         if (error) throw error;
         syncInfo = { status: "saved", message: L("ذخیره آنلاین شد", "Saved online", "Tallennettu pilveen") };
         return true;
       } catch (error) {
         console.error("Save failed", error);
-        syncInfo = { status: "error", message: L("ذخیره آنلاین ناموفق بود", "Cloud save failed", "Pilvitallennus epäonnistui") };
+        syncInfo = { status: "error", message: `${L("ذخیره آنلاین ناموفق بود", "Cloud save failed", "Pilvitallennus epäonnistui")}: ${shortError(error)}` };
         return false;
       }
+    }
+
+    function shortError(error) {
+      return esc(error?.message || error?.details || error?.code || String(error || "unknown"));
     }
 
     function save() {
@@ -1167,8 +1171,9 @@
 
     function withTimeout(promise, ms = 9000) {
       let timer;
+      const task = Promise.resolve(promise);
       return Promise.race([
-        promise.finally(() => clearTimeout(timer)),
+        task.finally(() => clearTimeout(timer)),
         new Promise((_, reject) => {
           timer = setTimeout(() => reject(new Error("Request timed out")), ms);
         })
