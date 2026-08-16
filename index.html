@@ -2908,7 +2908,7 @@
     function niceMax(value) {
       const power = Math.pow(10, Math.floor(Math.log10(value)));
       const normalized = value / power;
-      const nice = normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+      const nice = normalized <= 1 ? 1 : normalized <= 1.2 ? 1.2 : normalized <= 1.5 ? 1.5 : normalized <= 2 ? 2 : normalized <= 2.5 ? 2.5 : normalized <= 3 ? 3 : normalized <= 4 ? 4 : normalized <= 5 ? 5 : normalized <= 6 ? 6 : normalized <= 8 ? 8 : 10;
       return nice * power;
     }
 
